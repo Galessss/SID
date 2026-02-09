@@ -1,0 +1,235 @@
+/* Variáveis de Cores para facilitar ajustes */
+:root {
+    --bg-main: #121212;         /* Fundo da página */
+    --bg-container: #1E1E1E;    /* Fundo do card de login */
+    --bg-input: #2C2C2C;        /* Fundo dos inputs */
+    --text-primary: #FFFFFF;    /* Texto branco */
+    --text-secondary: #A1A1A1;  /* Texto cinza claro */
+    --accent-color: #FFFFFF;    /* Cor do botão principal */
+    --border-color: #3E3E3E;    /* Cor das bordas dos inputs */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Wrapper principal para centralizar tudo na tela */
+.main-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+/* O Card Principal */
+.login-container {
+    background-color: var(--bg-container);
+    width: 900px;
+    max-width: 95vw;
+    height: 550px; /* Altura fixa para bater com a imagem */
+    border-radius: 16px;
+    display: flex;
+    overflow: hidden; /* Para a imagem não vazar as bordas arredondadas */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* --- LADO ESQUERDO (Formulário) --- */
+.form-side {
+    flex: 1; /* Ocupa 50% do espaço */
+    padding: 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.form-header h1 {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.form-header p {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* Inputs */
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+/* Flex para o label e o link "Forgot password" ficarem na mesma linha */
+.label-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.forgot-link {
+    font-size: 12px;
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px 16px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.input-group input:focus {
+    border-color: var(--accent-color);
+}
+
+/* Botão de Login */
+.btn-login {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--accent-color);
+    color: var(--bg-main); /* Texto preto no botão branco */
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+/* Divisor "Or continue with" */
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.divider span {
+    padding: 0 10px;
+}
+
+/* Botões Sociais */
+.social-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.btn-social {
+    flex: 1;
+    padding: 10px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.signup-text {
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.signup-text a {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* --- LADO DIREITO (Imagem) --- */
+.image-side {
+    flex: 1; /* Ocupa os outros 50% */
+    background-color: #2a2a2a; /* Cor de placeholder caso não tenha imagem */
+    /* Se você tiver uma imagem, descomente a linha abaixo: */
+    /* background-image: url('/static/accounts/images/sua-imagem.jpg'); */
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #444;
+}
+
+/* Footer fora do card */
+.footer-links {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.footer-links a {
+    color: var(--text-secondary);
+    text-decoration: underline;
+}
+
+/* --- LADO DIREITO (GIF) --- */
+.image-side {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background-color: #2a2a2a; /* Cor de fundo caso demore a carregar */
+    border-top-right-radius: 16px;
+    border-bottom-right-radius: 16px;
+}
+
+.gif-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* ESSENCIAL: Faz o GIF preencher tudo corretamente */
+    z-index: 1;
+}
+
+.video-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.2); /* Sombra leve por cima (20%) */
+    z-index: 2;
+}

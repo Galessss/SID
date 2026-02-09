@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - SID{% endblock %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card shadow-lg p-4" style="width: 100%; max-width: 400px; border-radius: 15px;">
+        <div class="text-center mb-4">
+            <i class="bi bi-grid-1x2-fill text-primary" style="font-size: 3rem;"></i>
+            <h3 class="mt-2 fw-bold">Bem-vindo ao SID</h3>
+            <p class="text-muted">Faça login para gerenciar o cardápio</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+                <div class="alert alert-danger py-2 text-center small">
+                    Usuário ou senha incorretos.
+                </div>
+            {% endif %}
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Usuário</label>
+                <input type="text" name="username" class="form-control form-control-lg" placeholder="Seu usuário" required>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold">Senha</label>
+                <input type="password" name="password" class="form-control form-control-lg" placeholder="Sua senha" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 btn-lg fw-bold">Entrar</button>
+        </form>
+
+        <div class="text-center mt-3">
+            <small class="text-muted">Esqueceu a senha? Contate o suporte.</small>
+        </div>
+    </div>
+</div>
+{% endblock %}
