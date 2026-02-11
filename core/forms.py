@@ -1,16 +1,24 @@
 from django import forms
-from .models import Produto
+from .models import Produto, Configuracao
 
 class ProdutoForm(forms.ModelForm):
     class Meta:
         model = Produto
-        fields = ['nome', 'descricao', 'preco', 'foto', 'ativo']
-        
-        # Widgets para facilitar a estilização no frontend
+        fields = ['nome', 'descricao', 'preco', 'categoria', 'foto', 'ativo']
         widgets = {
-            'nome': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: X-Bacon'}),
-            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Ingredientes, detalhes...'}),
-            'preco': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'foto': forms.ClearableFileInput(attrs={'class': 'form-control'}),
-            'ativo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'nome': forms.TextInput(attrs={'class': 'form-control'}),
+            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'preco': forms.NumberInput(attrs={'class': 'form-control'}),
+            'categoria': forms.Select(attrs={'class': 'form-select'}),
         }
+
+class ConfiguracaoForm(forms.ModelForm):
+    class Meta:
+        model = Configuracao
+        fields = [
+            'nome_empresa', 
+            'foto_capa', 
+            'horario_abertura', 
+            'horario_fechamento',
+            'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'
+        ]
