@@ -3,191 +3,278 @@
 {% block content %}
 <div class="container-fluid mt-4">
     
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2>Painel do Gestor</h2>
-            <p class="text-body-secondary">Visão geral de vendas e cadastro de cardápio.</p>
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-5 fw-bold"><i class="bi bi-speedometer2"></i> Painel do Gestor</h1>
+            <p class="lead text-body-secondary">Visão geral de desempenho e personalização.</p>
+            <hr class="w-25 mx-auto"> 
         </div>
     </div>
 
-    <div class="row mb-5 text-center">
-        <div class="col-md-4">
-            <div class="card text-bg-success mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Diário</h5>
-                    <h3>R$ {{ faturamento_diario|floatformat:2 }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card text-bg-primary mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Semanal</h5>
-                    <h3>R$ {{ faturamento_semanal|floatformat:2 }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card text-bg-warning mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Mensal</h5>
-                    <h3>R$ {{ faturamento_mensal|floatformat:2 }}</h3>
+    <div class="row mb-5 justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0" id="cardFaturamento" style="transition: background-color 0.5s ease; min-height: 200px; border-radius: 20px;">
+                <div class="card-body py-4 text-center d-flex flex-column justify-content-center">
+                    <div class="mb-3">
+                        <select id="selectPeriodo" class="form-select form-select-lg text-center fw-bold border-0 shadow-sm mx-auto" 
+                                style="width: 220px; border-radius: 30px; cursor: pointer;">
+                            <option value="diario" selected>📅 Diário</option>
+                            <option value="semanal">🗓️ Semanal</option>
+                            <option value="mensal">📆 Mensal</option>
+                        </select>
+                    </div>
+                    <div>
+                        <h5 class="text-uppercase opacity-75 mb-0 text-white" id="labelPeriodo">Faturamento Hoje</h5>
+                        <h1 class="display-3 fw-bold text-white mt-2" id="displayValor">
+                            R$ {{ faturamento_diario|floatformat:2 }}
+                        </h1>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="row mb-5">
-        <div class="col-md-8 mx-auto">
-            <div class="card">
-                <div class="card-header">Produtos Mais Vendidos</div>
+        <div class="col-md-10 mx-auto">
+            <div class="card shadow-sm border-0" style="border-radius: 15px;">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h4 class="fw-bold mb-0">🚀 Produtos Mais Vendidos</h4>
+                </div>
                 <div class="card-body">
-                    <canvas id="topProdutosChart" height="100"></canvas>
+                    <div style="height: 350px; width: 100%;">
+                        <canvas id="topProdutosChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <hr>
+    <hr class="my-5">
 
-    <div class="row mt-5">
-        
-        <div class="col-md-5">
-            <div class="card mb-4">
-                <div class="card-header">Novo Produto</div>
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100 border-0" style="border-radius: 15px;">
+                <div class="card-header bg-success text-white fw-bold" style="border-radius: 15px 15px 0 0;">
+                    <i class="bi bi-plus-circle"></i> Novo Produto
+                </div>
                 <div class="card-body">
                     <form method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
-                        
                         {% for field in form %}
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">{{ field.label }}</label>
-                            {{ field }}
-                            {% if field.help_text %}
-                                <small class="text-body-secondary">{{ field.help_text }}</small>
-                            {% endif %}
-                        </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase">{{ field.label }}</label>
+                                {{ field }}
+                                {% for error in field.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
                         {% endfor %}
-
-                        <button type="submit" class="btn btn-success w-100">Cadastrar Produto</button>
+                        <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Cadastrar Produto</button>
                     </form>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-7">
-            <h3>Cardápio Atual</h3>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>Foto</th>
-                            <th>Produto</th>
-                            <th>Preço</th>
-                            <th>Status</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for produto in lista_produtos %}
-                        <tr>
-                            <td>
-                                {% if produto.foto %}
-                                    <img src="{{ produto.foto.url }}" alt="{{ produto.nome }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">
-                                {% else %}
-                                    <span class="text-body-secondary">Sem foto</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <strong>{{ produto.nome }}</strong><br>
-                                <small class="text-body-secondary">{{ produto.descricao|truncatechars:30 }}</small>
-                            </td>
-                            <td>R$ {{ produto.preco }}</td>
-                            <td>
-                                {% if produto.ativo %}
-                                    <span class="badge bg-success">Ativo</span>
-                                {% else %}
-                                    <span class="badge bg-danger">Inativo</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{% url 'editar_produto' produto.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center text-body-secondary">Nenhum produto cadastrado.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100 border-0" style="border-radius: 15px;">
+                <div class="card-header bg-primary text-white fw-bold" style="border-radius: 15px 15px 0 0;">
+                    <i class="bi bi-palette"></i> Personalizar Cardápio
+                </div>
+                <div class="card-body d-flex flex-column justify-content-center text-center">
+                    <form method="POST" enctype="multipart/form-data" action="{% url 'atualizar_config' %}">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <i class="bi bi-image-fill display-4 text-primary opacity-50"></i>
+                            <p class="text-muted mt-2">Altere a imagem de destaque do seu cardápio digital para atrair mais clientes.</p>
+                        </div>
+                        <div class="mb-3">
+                            <input type="file" name="foto_capa" class="form-control" accept="image/*" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">
+                            <i class="bi bi-cloud-arrow-up"></i> Salvar Nova Capa
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="fw-bold m-0">Cardápio Atual</h3>
+                <span class="badge bg-secondary">{{ lista_produtos.count }} Itens</span>
+            </div>
+            <div class="card shadow-sm border-0" style="border-radius: 15px; overflow: hidden;">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Foto</th>
+                                <th>Produto</th>
+                                <th>Preço</th>
+                                <th>Status</th>
+                                <th class="text-end pe-3">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for produto in lista_produtos %}
+                            <tr>
+                                <td class="ps-3">
+                                    {% if produto.foto %}
+                                        <img src="{{ produto.foto.url }}" alt="{{ produto.nome }}" style="width: 45px; height: 45px; object-fit: cover; border-radius: 8px;">
+                                    {% else %}
+                                        <div class="bg-secondary bg-opacity-10 rounded d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                                            <i class="bi bi-image text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="fw-bold">{{ produto.nome }}</div>
+                                    <small class="text-body-secondary">{{ produto.get_categoria_display }}</small>
+                                </td>
+                                <td class="fw-bold text-success">R$ {{ produto.preco }}</td>
+                                <td>
+                                    <span class="badge {% if produto.ativo %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill">
+                                        {% if produto.ativo %}Ativo{% else %}Inativo{% endif %}
+                                    </span>
+                                </td>
+                                <td class="text-end pe-3">
+                                    <a href="{% url 'editar_produto' produto.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" class="text-center py-4">Nenhum produto encontrado.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
+<div class="col-md-6">
+    <div class="card shadow-sm h-100 border-0" style="border-radius: 15px;">
+        <div class="card-header bg-primary text-white fw-bold" style="border-radius: 15px 15px 0 0;">
+            <i class="bi bi-palette"></i> Personalizar Estabelecimento
+        </div>
+        <div class="card-body">
+           <form method="POST" enctype="multipart/form-data" action="{% url 'atualizar_config' %}">
+    {% csrf_token %}
+    
+    <div class="mb-3">
+        <label class="form-label fw-bold">Nome da Empresa</label>
+        <input type="text" name="nome_empresa" class="form-control" value="{{ config.nome_empresa }}">
+    </div>
 
+    <div class="row mb-3">
+        <div class="col">
+            <label class="form-label fw-bold">Abre às:</label>
+            <input type="time" name="horario_abertura" class="form-control" value="{{ config.horario_abertura|time:'H:i' }}">
+        </div>
+        <div class="col">
+            <label class="form-label fw-bold">Fecha às:</label>
+            <input type="time" name="horario_fechamento" class="form-control" value="{{ config.horario_fechamento|time:'H:i' }}">
+        </div>
+    </div>
+
+    <label class="form-label fw-bold d-block">Dias de Funcionamento:</label>
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="segunda" id="seg" {% if config.segunda %}checked{% endif %}>
+            <label class="form-check-label" for="seg">Seg</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="terca" id="ter" {% if config.terca %}checked{% endif %}>
+            <label class="form-check-label" for="ter">Ter</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="quarta" id="qua" {% if config.quarta %}checked{% endif %}>
+            <label class="form-check-label" for="qua">Qua</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="quinta" id="qui" {% if config.quinta %}checked{% endif %}>
+            <label class="form-check-label" for="qui">Qui</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="sexta" id="sex" {% if config.sexta %}checked{% endif %}>
+            <label class="form-check-label" for="sex">Sex</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="sabado" id="sab" {% if config.sabado %}checked{% endif %}>
+            <label class="form-check-label" for="sab">Sáb</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="domingo" id="dom" {% if config.domingo %}checked{% endif %}>
+            <label class="form-check-label" for="dom">Dom</label>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label fw-bold">Nova Foto de Capa</label>
+        <input type="file" name="foto_capa" class="form-control">
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">Aplicar Alterações</button>
+</form>
+        </div>
+    </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        const ctx = document.getElementById('topProdutosChart').getContext('2d');
-        
-        // Função para pegar as cores do tema atual para o gráfico
-        function getThemeColors() {
-            const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-            return {
-                textColor: isDark ? '#f8f9fa' : '#212529', // Cor do texto (claro no escuro, escuro no claro)
-                gridColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' // Cor da grade
-            };
+        // --- 1. LÓGICA DO CARD INTERATIVO ---
+        const dadosFinanceiros = {
+            diario: { valor: "{{ faturamento_diario|floatformat:2 }}", cor: "#198754", label: "Faturamento Hoje" },
+            semanal: { valor: "{{ faturamento_semanal|floatformat:2 }}", cor: "#0d6efd", label: "Últimos 7 dias" },
+            mensal: { valor: "{{ faturamento_mensal|floatformat:2 }}", cor: "#ffc107", label: "Este Mês" }
+        };
+
+        const select = document.getElementById('selectPeriodo');
+        const display = document.getElementById('displayValor');
+        const label = document.getElementById('labelPeriodo');
+        const card = document.getElementById('cardFaturamento');
+
+        function atualizarPainel() {
+            const info = dadosFinanceiros[select.value];
+            display.innerText = `R$ ${info.valor}`;
+            label.innerText = info.label;
+            card.style.backgroundColor = info.cor;
+            if(select.value === 'mensal') {
+                display.classList.replace('text-white', 'text-dark');
+                label.classList.replace('text-white', 'text-dark');
+            } else {
+                display.classList.add('text-white'); display.classList.remove('text-dark');
+                label.classList.add('text-white'); label.classList.remove('text-dark');
+            }
         }
+        select.addEventListener('change', atualizarPainel);
+        atualizarPainel();
 
-        const themeColors = getThemeColors();
+        // --- 2. LÓGICA DO GRÁFICO ---
+        const ctx = document.getElementById('topProdutosChart').getContext('2d');
+        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
         
-        const labels = [{% for item in top_produtos %}"{{ item.produto__nome|escapejs }}",{% endfor %}];
-        const data = [{% for item in top_produtos %}{{ item.total_vendido }},{% endfor %}];
-
         new Chart(ctx, {
-            type: 'bar', 
+            type: 'bar',
             data: {
-                labels: labels,
+                labels: [{% for item in top_produtos %}"{{ item.produto__nome|escapejs }}",{% endfor %}],
                 datasets: [{
-                    label: 'Unidades Vendidas',
-                    data: data,
+                    label: 'Vendas',
+                    data: [{% for item in top_produtos %}{{ item.total_vendido }},{% endfor %}],
                     backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
+                    borderRadius: 8
                 }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: themeColors.gridColor // Cor da grade adaptável
-                        },
-                        ticks: {
-                            color: themeColors.textColor // Cor do texto do eixo Y
-                        }
-                    },
-                    x: {
-                        grid: {
-                            color: themeColors.gridColor // Cor da grade adaptável
-                        },
-                        ticks: {
-                            color: themeColors.textColor // Cor do texto do eixo X
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: themeColors.textColor // Cor do texto da legenda
-                        }
-                    }
+                    y: { beginAtZero: true, grid: { color: isDark ? '#333' : '#eee' } },
+                    x: { grid: { display: false } }
                 }
             }
         });
     });
 </script>
-
 {% endblock %}

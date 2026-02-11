@@ -1,0 +1,226 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cardápio | {{ nome_empresa }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-body: #121212;
+            --bg-card: #1E1E1E;
+            --primary: #FFC107; 
+            --text-main: #FFFFFF;
+            --text-sec: #B0B0B0;
+            --green: #2ecc71;
+            --radius: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            padding-bottom: 80px; 
+        }
+
+        /* --- HEADER --- */
+        header {
+            /* A imagem agora é definida via Inline Style no HTML abaixo para ser dinâmica */
+            background-size: cover;
+            background-position: center;
+            height: 200px;
+            display: flex;
+            align-items: flex-end;
+            padding: 20px;
+        }
+
+        .restaurant-info h1 {
+            font-size: 28px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+        
+        .restaurant-info p {
+            color: var(--primary); font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+        }
+
+        /* --- NAVEGAÇÃO --- */
+        .category-nav {
+            position: sticky; top: 0; background-color: var(--bg-body); padding: 15px 0;
+            overflow-x: auto; white-space: nowrap; z-index: 100;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; gap: 10px; padding-left: 20px; padding-right: 20px;
+        }
+        .category-nav::-webkit-scrollbar { display: none; }
+
+        .cat-btn {
+            background-color: var(--bg-card); color: var(--text-sec); border: 1px solid #333;
+            padding: 8px 20px; border-radius: 50px; cursor: pointer; transition: 0.3s; font-size: 14px;
+        }
+        .cat-btn.active, .cat-btn:hover {
+            background-color: var(--primary); color: #000; font-weight: 600; border-color: var(--primary);
+        }
+
+        /* --- GRID --- */
+        .menu-section { padding: 20px; scroll-margin-top: 70px; } /* Ajuste para o scroll não cortar o título */
+
+        .section-title {
+            font-size: 20px; margin-bottom: 15px; border-left: 4px solid var(--primary); padding-left: 10px;
+        }
+
+        .products-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px;
+        }
+        @media (min-width: 768px) { .products-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); } }
+
+        .product-card {
+            background-color: var(--bg-card); border-radius: var(--radius); overflow: hidden;
+            display: flex; flex-direction: column; transition: transform 0.2s; border: 1px solid #2a2a2a;
+        }
+        .product-card:active { transform: scale(0.98); }
+
+        .product-img { width: 100%; height: 140px; object-fit: cover; }
+        
+        /* Placeholder para produtos sem foto */
+        .img-placeholder {
+            width: 100%; height: 140px; background-color: #333; display: flex; align-items: center; justify-content: center;
+            color: #555; font-size: 2rem;
+        }
+
+        .product-info { padding: 12px; display: flex; flex-direction: column; flex-grow: 1; }
+        .product-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; color: var(--text-main); }
+        .product-desc {
+            font-size: 11px; color: var(--text-sec); margin-bottom: 10px; line-height: 1.4;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        }
+
+        .price-row { margin-top: auto; display: flex; justify-content: space-between; align-items: center; }
+        .price { color: var(--green); font-weight: 700; font-size: 16px; }
+
+        .add-btn {
+            background-color: #333; color: white; border: none; width: 32px; height: 32px;
+            border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;
+        }
+        .add-btn:hover { background-color: var(--primary); color: black; }
+
+        /* --- CARRINHO --- */
+        .floating-cart {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background-color: var(--primary); color: #000; width: 90%; max-width: 400px;
+            padding: 15px; border-radius: 50px; display: flex; justify-content: space-between; align-items: center;
+            font-weight: 700; box-shadow: 0 10px 20px rgba(255, 193, 7, 0.2); cursor: pointer; z-index: 999;
+            transition: bottom 0.3s; display: none; /* Começa oculto */
+        }
+        .cart-count { background-color: #000; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-right: 8px; }
+
+    </style>
+</head>
+<body>
+
+    <header style="background-image: linear-gradient(to bottom, rgba(0,0,0,0.4), var(--bg-body)), url('{{ foto_capa }}');">
+    <div class="restaurant-info">
+        <h1>{{ nome_empresa }}</h1>
+        <p>{{ horario_funcionamento }}</p>
+    </div>
+</header>
+
+    <nav class="category-nav">
+        {% for categoria, produtos in cardapio.items %}
+            <button class="cat-btn {% if forloop.first %}active{% endif %}" 
+                    onclick="scrollToSection('cat-{{ forloop.counter }}')">
+                {{ categoria }}
+            </button>
+        {% endfor %}
+    </nav>
+
+    <main>
+        {% for categoria, produtos in cardapio.items %}
+        <section id="cat-{{ forloop.counter }}" class="menu-section">
+            <h2 class="section-title">{{ categoria }}</h2>
+            
+            <div class="products-grid">
+                {% for produto in produtos %}
+                <article class="product-card">
+                    
+                    {% if produto.foto %}
+                        <img src="{{ produto.foto.url }}" class="product-img" alt="{{ produto.nome }}">
+                    {% else %}
+                        <div class="img-placeholder"><i class="bi bi-image"></i></div>
+                    {% endif %}
+
+                    <div class="product-info">
+                        <h3 class="product-title">{{ produto.nome }}</h3>
+                        <p class="product-desc">{{ produto.descricao|default:"Delicioso e preparado na hora." }}</p>
+                        
+                        <div class="price-row">
+                            <span class="price">R$ {{ produto.preco }}</span>
+                            <button class="add-btn" onclick="adicionarAoCarrinho('{{ produto.nome }}', {{ produto.preco|stringformat:'f' }})">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+        {% empty %}
+            <div style="text-align: center; padding: 40px; color: #555;">
+                <h3>Cardápio vazio 😢</h3>
+                <p>Nenhum produto cadastrado e ativo no momento.</p>
+            </div>
+        {% endfor %}
+    </main>
+
+    <div class="floating-cart" id="cartBar" onclick="alert('Funcionalidade de finalizar pedido em breve!')">
+        <div>
+            <span class="cart-count" id="count">0</span>
+            <span>Ver Sacola</span>
+        </div>
+        <span id="total">R$ 0,00</span>
+    </div>
+
+    <script>
+        let count = 0;
+        let total = 0;
+
+        function adicionarAoCarrinho(nome, preco) {
+            count++;
+            total += parseFloat(preco);
+            
+            // Atualiza os textos
+            document.getElementById('count').innerText = count;
+            document.getElementById('total').innerText = 'R$ ' + total.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            
+            // Mostra a barra se for o primeiro item
+            const cartBar = document.getElementById('cartBar');
+            if (count === 1) {
+                cartBar.style.display = 'flex';
+            }
+
+            // Animação de pulso
+            cartBar.style.transform = "translateX(-50%) scale(1.05)";
+            setTimeout(() => {
+                cartBar.style.transform = "translateX(-50%) scale(1)";
+            }, 200);
+        }
+
+        function scrollToSection(id) {
+            const element = document.getElementById(id);
+            const headerOffset = 70; // Compensação do menu sticky
+            const elementPosition = element.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+            window.scrollTo({
+                top: offsetPosition,
+                behavior: "smooth"
+            });
+
+            // Atualiza botões (Visual)
+            document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+    </script>
+
+</body>
+</html>
