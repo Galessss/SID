@@ -6,39 +6,52 @@
     <div class="row mb-5">
         <div class="col-12 text-center">
             <h1 class="display-5 fw-bold"><i class="bi bi-speedometer2"></i> Painel do Gestor</h1>
-            <p class="lead text-body-secondary">Visão geral de desempenho e personalização.</p>
+            <p class="lead text-body-secondary">Visão geral financeira e configurações da loja.</p>
             <hr class="w-25 mx-auto"> 
         </div>
     </div>
 
-    <div class="row mb-5 justify-content-center">
+    <section id="secao-faturamento" class="row mb-5 justify-content-center">
         <div class="col-md-6">
-            <div class="card shadow-lg border-0" id="cardFaturamento" style="transition: background-color 0.5s ease; min-height: 200px; border-radius: 20px;">
-                <div class="card-body py-4 text-center d-flex flex-column justify-content-center">
-                    <div class="mb-3">
-                        <select id="selectPeriodo" class="form-select form-select-lg text-center fw-bold border-0 shadow-sm mx-auto" 
-                                style="width: 220px; border-radius: 30px; cursor: pointer;">
+            <div class="card bg-dark border-secondary border-opacity-25 shadow-lg overflow-hidden" style="border-radius: 20px;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <select id="selectPeriodo" class="form-select form-select-sm bg-transparent text-secondary border-secondary border-opacity-50 fw-bold rounded-pill" style="width: 130px; cursor: pointer;">
                             <option value="diario" selected>📅 Diário</option>
                             <option value="semanal">🗓️ Semanal</option>
                             <option value="mensal">📆 Mensal</option>
                         </select>
+                        <span class="badge bg-success-subtle text-success rounded-pill" id="badgeStatus">Meta Ativa</span>
                     </div>
-                    <div>
-                        <h5 class="text-uppercase opacity-75 mb-0 text-white" id="labelPeriodo">Faturamento Hoje</h5>
-                        <h1 class="display-3 fw-bold text-white mt-2" id="displayValor">
+                    
+                    <div class="mb-1">
+                        <h5 class="text-uppercase text-secondary fw-bold mb-0 small" id="labelPeriodo">Faturamento Hoje</h5>
+                    </div>
+
+                    <div class="d-flex align-items-baseline">
+                        <h1 class="display-3 fw-bold text-white mb-0" id="displayValor">
                             R$ {{ faturamento_diario|floatformat:2 }}
                         </h1>
+                        <span class="ms-2 text-secondary fs-5">BRL</span>
+                    </div>
+
+                    <div class="progress mt-4" style="height: 8px; background-color: #2d2d2d;">
+                        <div id="barraProgresso" class="progress-bar bg-primary" role="progressbar" style="width: 0%; border-radius: 10px; transition: width 1s ease;"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2">
+                        <p class="text-secondary small mb-0" id="textoMeta">0% da meta atingida</p>
+                        <p class="text-secondary small mb-0">Meta: R$ <span id="valorMetaExibido">{{ meta_diaria|floatformat:2 }}</span></p>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <div class="row mb-5">
+    <section id="secao-desempenho" class="row mb-5">
         <div class="col-md-10 mx-auto">
             <div class="card shadow-sm border-0" style="border-radius: 15px;">
                 <div class="card-header bg-transparent border-0 pt-4 px-4">
-                    <h4 class="fw-bold mb-0">🚀 Produtos Mais Vendidos</h4>
+                    <h4 class="fw-bold mb-0">📈 Evolução de Vendas </h4>
                 </div>
                 <div class="card-body">
                     <div style="height: 350px; width: 100%;">
@@ -47,234 +60,150 @@
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
     <hr class="my-5">
 
     <div class="row mb-5">
-        <div class="col-md-6">
-            <div class="card shadow-sm h-100 border-0" style="border-radius: 15px;">
-                <div class="card-header bg-success text-white fw-bold" style="border-radius: 15px 15px 0 0;">
-                    <i class="bi bi-plus-circle"></i> Novo Produto
-                </div>
-                <div class="card-body">
-                    <form method="POST" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        {% for field in form %}
-                            <div class="mb-3">
-                                <label class="form-label fw-bold small text-uppercase">{{ field.label }}</label>
-                                {{ field }}
-                                {% for error in field.errors %}
-                                    <div class="text-danger small">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                        {% endfor %}
-                        <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Cadastrar Produto</button>
-                    </form>
+        <section class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100 text-white" style="border-radius: 15px; background: linear-gradient(135deg, #0d6efd 0%, #0043a8 100%);">
+                <div class="card-body p-5 d-flex flex-column justify-content-center align-items-center text-center">
+                    <i class="bi bi-box-seam display-1 mb-3 opacity-50"></i>
+                    <h2 class="fw-bold">Gestão de Produtos</h2>
+                    <p class="opacity-75 mb-4">Cadastre novos itens, edite preços, fotos e altere a disponibilidade (Ativo/Inativo).</p>
+                    <a href="{% url 'produtos' %}" class="btn btn-light text-primary fw-bold px-4 py-2 rounded-pill shadow-sm">
+                        Acessar Catálogo <i class="bi bi-arrow-right ms-2"></i>
+                    </a>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div class="col-md-6">
-            <div class="card shadow-sm h-100 border-0" style="border-radius: 15px;">
-                <div class="card-header bg-primary text-white fw-bold" style="border-radius: 15px 15px 0 0;">
-                    <i class="bi bi-palette"></i> Personalizar Cardápio
-                </div>
-                <div class="card-body d-flex flex-column justify-content-center text-center">
-                    <form method="POST" enctype="multipart/form-data" action="{% url 'atualizar_config' %}">
-                        {% csrf_token %}
-                        <div class="mb-4">
-                            <i class="bi bi-image-fill display-4 text-primary opacity-50"></i>
-                            <p class="text-muted mt-2">Altere a imagem de destaque do seu cardápio digital para atrair mais clientes.</p>
-                        </div>
-                        <div class="mb-3">
-                            <input type="file" name="foto_capa" class="form-control" accept="image/*" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">
-                            <i class="bi bi-cloud-arrow-up"></i> Salvar Nova Capa
-                        </button>
-                    </form>
+        <section class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100 text-white" style="border-radius: 15px; background: linear-gradient(135deg, #0d6efd 0%, #0043a8 100%);">
+                <div class="card-body p-5 d-flex flex-column justify-content-center align-items-center text-center">
+                    <i class="bi bi-box-seam display-1 mb-3 opacity-50"></i>
+                    <h2 class="fw-bold">Gestão de Produtos</h2>
+                    <p class="opacity-75 mb-4">Cadastre novos itens, edite preços, fotos e altere a disponibilidade (Ativo/Inativo).</p>
+                    <a href="{% url 'produtos' %}" class="btn btn-light text-primary fw-bold px-4 py-2 rounded-pill shadow-sm">
+                        Acessar Catálogo <i class="bi bi-arrow-right ms-2"></i>
+                    </a>
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <div class="row">
-        <div class="col-md-12">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="fw-bold m-0">Cardápio Atual</h3>
-                <span class="badge bg-secondary">{{ lista_produtos.count }} Itens</span>
-            </div>
-            <div class="card shadow-sm border-0" style="border-radius: 15px; overflow: hidden;">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="ps-3">Foto</th>
-                                <th>Produto</th>
-                                <th>Preço</th>
-                                <th>Status</th>
-                                <th class="text-end pe-3">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for produto in lista_produtos %}
-                            <tr>
-                                <td class="ps-3">
-                                    {% if produto.foto %}
-                                        <img src="{{ produto.foto.url }}" alt="{{ produto.nome }}" style="width: 45px; height: 45px; object-fit: cover; border-radius: 8px;">
-                                    {% else %}
-                                        <div class="bg-secondary bg-opacity-10 rounded d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                                            <i class="bi bi-image text-muted"></i>
-                                        </div>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div class="fw-bold">{{ produto.nome }}</div>
-                                    <small class="text-body-secondary">{{ produto.get_categoria_display }}</small>
-                                </td>
-                                <td class="fw-bold text-success">R$ {{ produto.preco }}</td>
-                                <td>
-                                    <span class="badge {% if produto.ativo %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill">
-                                        {% if produto.ativo %}Ativo{% else %}Inativo{% endif %}
-                                    </span>
-                                </td>
-                                <td class="text-end pe-3">
-                                    <a href="{% url 'editar_produto' produto.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="5" class="text-center py-4">Nenhum produto encontrado.</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        
+
+
+
+
     </div>
 </div>
-<div class="col-md-6">
-    <div class="card shadow-sm h-100 border-0" style="border-radius: 15px;">
-        <div class="card-header bg-primary text-white fw-bold" style="border-radius: 15px 15px 0 0;">
-            <i class="bi bi-palette"></i> Personalizar Estabelecimento
-        </div>
-        <div class="card-body">
-           <form method="POST" enctype="multipart/form-data" action="{% url 'atualizar_config' %}">
-    {% csrf_token %}
-    
-    <div class="mb-3">
-        <label class="form-label fw-bold">Nome da Empresa</label>
-        <input type="text" name="nome_empresa" class="form-control" value="{{ config.nome_empresa }}">
-    </div>
 
-    <div class="row mb-3">
-        <div class="col">
-            <label class="form-label fw-bold">Abre às:</label>
-            <input type="time" name="horario_abertura" class="form-control" value="{{ config.horario_abertura|time:'H:i' }}">
-        </div>
-        <div class="col">
-            <label class="form-label fw-bold">Fecha às:</label>
-            <input type="time" name="horario_fechamento" class="form-control" value="{{ config.horario_fechamento|time:'H:i' }}">
-        </div>
-    </div>
-
-    <label class="form-label fw-bold d-block">Dias de Funcionamento:</label>
-    <div class="d-flex flex-wrap gap-2 mb-3">
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="segunda" id="seg" {% if config.segunda %}checked{% endif %}>
-            <label class="form-check-label" for="seg">Seg</label>
-        </div>
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="terca" id="ter" {% if config.terca %}checked{% endif %}>
-            <label class="form-check-label" for="ter">Ter</label>
-        </div>
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="quarta" id="qua" {% if config.quarta %}checked{% endif %}>
-            <label class="form-check-label" for="qua">Qua</label>
-        </div>
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="quinta" id="qui" {% if config.quinta %}checked{% endif %}>
-            <label class="form-check-label" for="qui">Qui</label>
-        </div>
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="sexta" id="sex" {% if config.sexta %}checked{% endif %}>
-            <label class="form-check-label" for="sex">Sex</label>
-        </div>
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="sabado" id="sab" {% if config.sabado %}checked{% endif %}>
-            <label class="form-check-label" for="sab">Sáb</label>
-        </div>
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="domingo" id="dom" {% if config.domingo %}checked{% endif %}>
-            <label class="form-check-label" for="dom">Dom</label>
-        </div>
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label fw-bold">Nova Foto de Capa</label>
-        <input type="file" name="foto_capa" class="form-control">
-    </div>
-
-    <button type="submit" class="btn btn-primary w-100">Aplicar Alterações</button>
-</form>
-        </div>
-    </div>
-</div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // --- 1. LÓGICA DO CARD INTERATIVO ---
+        // --- 1. LÓGICA DO CARD DE FATURAMENTO ---
+        const metaDiaria = parseFloat("{{ meta_diaria|default:1000 }}".replace(',', '.'));
+        
         const dadosFinanceiros = {
-            diario: { valor: "{{ faturamento_diario|floatformat:2 }}", cor: "#198754", label: "Faturamento Hoje" },
-            semanal: { valor: "{{ faturamento_semanal|floatformat:2 }}", cor: "#0d6efd", label: "Últimos 7 dias" },
-            mensal: { valor: "{{ faturamento_mensal|floatformat:2 }}", cor: "#ffc107", label: "Este Mês" }
+            diario: { 
+                valor: parseFloat("{{ faturamento_diario|default:0 }}".replace(',', '.')), 
+                label: "Faturamento Hoje" 
+            },
+            semanal: { 
+                valor: parseFloat("{{ faturamento_semanal|default:0 }}".replace(',', '.')), 
+                label: "Últimos 7 dias" 
+            },
+            mensal: { 
+                valor: parseFloat("{{ faturamento_mensal|default:0 }}".replace(',', '.')), 
+                label: "Este Mês" 
+            }
         };
 
         const select = document.getElementById('selectPeriodo');
         const display = document.getElementById('displayValor');
         const label = document.getElementById('labelPeriodo');
-        const card = document.getElementById('cardFaturamento');
+        const barra = document.getElementById('barraProgresso');
+        const textoMeta = document.getElementById('textoMeta');
 
         function atualizarPainel() {
             const info = dadosFinanceiros[select.value];
-            display.innerText = `R$ ${info.valor}`;
+            
+            // Formatação de moeda brasileira
+            display.innerText = info.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             label.innerText = info.label;
-            card.style.backgroundColor = info.cor;
-            if(select.value === 'mensal') {
-                display.classList.replace('text-white', 'text-dark');
-                label.classList.replace('text-white', 'text-dark');
+
+            let porcentagem = (info.valor / metaDiaria) * 100;
+            if (porcentagem > 100) porcentagem = 100;
+            
+            barra.style.width = `${porcentagem}%`;
+            textoMeta.innerText = `${porcentagem.toFixed(1)}% da meta atingida`;
+
+            if (porcentagem >= 100) {
+                barra.classList.remove('bg-primary');
+                barra.classList.add('bg-success');
             } else {
-                display.classList.add('text-white'); display.classList.remove('text-dark');
-                label.classList.add('text-white'); label.classList.remove('text-dark');
+                barra.classList.remove('bg-success');
+                barra.classList.add('bg-primary');
             }
         }
-        select.addEventListener('change', atualizarPainel);
-        atualizarPainel();
 
-        // --- 2. LÓGICA DO GRÁFICO ---
-        const ctx = document.getElementById('topProdutosChart').getContext('2d');
-        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        if (select) {
+            select.addEventListener('change', atualizarPainel);
+            atualizarPainel();
+        }
+
+        // --- 2. LÓGICA DO GRÁFICO MULTI-LINHAS ---
+        const ctx = document.getElementById('topProdutosChart');
         
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: [{% for item in top_produtos %}"{{ item.produto__nome|escapejs }}",{% endfor %}],
-                datasets: [{
-                    label: 'Vendas',
-                    data: [{% for item in top_produtos %}{{ item.total_vendido }},{% endfor %}],
-                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true, grid: { color: isDark ? '#333' : '#eee' } },
-                    x: { grid: { display: false } }
+        if (ctx) {
+            const labels = JSON.parse('{{ chart_labels_json|escapejs }}');
+            const datasets = JSON.parse('{{ chart_datasets_json|escapejs }}');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            display: true, 
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                boxWidth: 8
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#1e293b',
+                            cornerRadius: 8
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            grid: { color: '#334155', drawBorder: false },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: { 
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
                 }
-            }
-        });
+            });
+        }
     });
 </script>
 {% endblock %}

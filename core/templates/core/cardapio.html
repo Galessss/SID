@@ -12,7 +12,7 @@
         :root {
             --bg-body: #121212;
             --bg-card: #1E1E1E;
-            --primary: #FFC107; 
+            --primary: #dddddd; 
             --text-main: #FFFFFF;
             --text-sec: #B0B0B0;
             --green: #2ecc71;
@@ -27,7 +27,7 @@
             padding-bottom: 80px; 
         }
 
-        /* --- HEADER --- */
+      
         header {
             /* A imagem agora é definida via Inline Style no HTML abaixo para ser dinâmica */
             background-size: cover;
@@ -135,42 +135,45 @@
     </nav>
 
     <main>
-        {% for categoria, produtos in cardapio.items %}
-        <section id="cat-{{ forloop.counter }}" class="menu-section">
-            <h2 class="section-title">{{ categoria }}</h2>
+    {% for categoria in categorias %}
+        <section id="cat-{{ categoria.id }}" class="menu-section">
+            <h2 class="section-title">{{ categoria.nome }}</h2>
             
             <div class="products-grid">
-                {% for produto in produtos %}
-                <article class="product-card">
-                    
-                    {% if produto.foto %}
-                        <img src="{{ produto.foto.url }}" class="product-img" alt="{{ produto.nome }}">
-                    {% else %}
-                        <div class="img-placeholder"><i class="bi bi-image"></i></div>
-                    {% endif %}
+                {% for produto in categoria.produtos.all %}
+                    {% if produto.ativo %}
+                    <article class="product-card">
+                        {% if produto.foto %}
+                            <img src="{{ produto.foto.url }}" class="product-img" alt="{{ produto.nome }}">
+                        {% else %}
+                            <div class="img-placeholder"><i class="bi bi-image"></i></div>
+                        {% endif %}
 
-                    <div class="product-info">
-                        <h3 class="product-title">{{ produto.nome }}</h3>
-                        <p class="product-desc">{{ produto.descricao|default:"Delicioso e preparado na hora." }}</p>
-                        
-                        <div class="price-row">
-                            <span class="price">R$ {{ produto.preco }}</span>
-                            <button class="add-btn" onclick="adicionarAoCarrinho('{{ produto.nome }}', {{ produto.preco|stringformat:'f' }})">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
+                        <div class="product-info">
+                            <h3 class="product-title">{{ produto.nome }}</h3>
+                            <p class="product-desc">{{ produto.descricao|default:"Delicioso e preparado na hora." }}</p>
+                            
+                            <div class="price-row">
+                                <span class="price">R$ {{ produto.preco }}</span>
+                                <button class="add-btn" onclick="adicionarAoCarrinho('{{ produto.nome }}', {{ produto.preco|stringformat:'f' }})">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                </article>
+                    </article>
+                    {% endif %}
+                {% empty %}
+                    <p class="text-muted small ps-3">Nenhum produto disponível nesta categoria.</p>
                 {% endfor %}
             </div>
         </section>
-        {% empty %}
-            <div style="text-align: center; padding: 40px; color: #555;">
-                <h3>Cardápio vazio 😢</h3>
-                <p>Nenhum produto cadastrado e ativo no momento.</p>
-            </div>
-        {% endfor %}
-    </main>
+    {% empty %}
+        <div style="text-align: center; padding: 40px; color: #555;">
+            <h3>Cardápio em manutenção 🛠️</h3>
+            <p>Estamos preparando novidades para você. Volte logo!</p>
+        </div>
+    {% endfor %}
+</main>
 
     <div class="floating-cart" id="cartBar" onclick="alert('Funcionalidade de finalizar pedido em breve!')">
         <div>
