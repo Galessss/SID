@@ -2,7 +2,7 @@ from django.contrib import admin
 
 # Register your models here.
 from django.contrib import admin
-from .models import Produto, Pedido, ItemPedido
+from .models import Produto, Pedido, ItemPedido, Categoria
 
 # Configuração bonita para o Admin
 @admin.register(Produto)
@@ -14,3 +14,4 @@ class ProdutoAdmin(admin.ModelAdmin):
 # Registrando os outros (opcional por enquanto)
 admin.site.register(Pedido)
 admin.site.register(ItemPedido)
+admin.site.register(Categoria)

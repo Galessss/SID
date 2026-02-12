@@ -1,28 +1,66 @@
 from django.db import models
 from django.utils import timezone
 
-class Produto(models.Model):
-    CATEGORIAS_CHOICES = [
-        ('lanches', 'Lanches / Pratos'),
-        ('bebidas', 'Bebidas'),
-        ('sobremesas', 'Sobremesas'),
-        ('porcoes', 'Porções / Extras'),
-    ]
-    nome = models.CharField(max_length=100)
-    descricao = models.TextField(verbose_name="Descrição")
-    preco = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Preço")
-    categoria = models.CharField(max_length=20, choices=CATEGORIAS_CHOICES, default='lanches', verbose_name="Categoria")
-    foto = models.ImageField(upload_to='produtos/', blank=True, null=True)
-    ativo = models.BooleanField(default=True)
+from django.db import models
+
+# 1. NOVO MODELO: Categoria
+class Categoria(models.Model):
+    nome = models.CharField(max_length=50, unique=True, verbose_name="Nome da Categoria")
+
+    class Meta:
+        verbose_name = "Categoria"
+        verbose_name_plural = "Categorias"
 
     def __str__(self):
         return self.nome
 
 class Configuracao(models.Model):
-    nome_empresa = models.CharField(max_length=100, default="SID Burguer & Co.")
-    foto_capa = models.ImageField(upload_to='config/', blank=True, null=True)
-    horario_abertura = models.TimeField(default="18:00")
-    horario_fechamento = models.TimeField(default="23:00")
+    # ... campos anteriores ...
+    meta_diaria = models.DecimalField(max_digits=10, decimal_places=2, default=1000.00)
+
+
+# 2. MODELO ATUALIZADO: Produto
+class Produto(models.Model):
+    nome = models.CharField(max_length=100)
+    descricao = models.TextField(verbose_name="Descrição")
+    preco = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Preço")
+    
+    # Agora o campo categoria é uma chave estrangeira
+    categoria = models.ForeignKey(
+        Categoria, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        related_name='produtos',
+        verbose_name="Categoria"
+    )
+    
+    foto = models.ImageField(upload_to='produtos/', blank=True, null=True)
+    ativo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.nome
+    
+
+
+
+from django.db import models
+
+# ... outros modelos (Produto, Categoria, etc) ...
+
+class Configuracao(models.Model):
+    # Campos existentes...
+    nome_empresa = models.CharField(max_length=100, default="Minha Empresa")
+    foto_capa = models.ImageField(upload_to='config/', null=True, blank=True)
+    visualizacoes_cardapio = models.IntegerField(default=0)
+    
+    horario_abertura = models.TimeField(default='08:00')
+    horario_fechamento = models.TimeField(default='18:00')
+    
+    # --- ADICIONE ESTE CAMPO ---
+    meta_diaria = models.DecimalField(max_digits=10, decimal_places=2, default=1000.00)
+    # ---------------------------
+
+    # Dias da semana
     segunda = models.BooleanField(default=True)
     terca = models.BooleanField(default=True)
     quarta = models.BooleanField(default=True)
@@ -48,3 +86,4 @@ class ItemPedido(models.Model):
     @property
     def subtotal(self):
         return self.quantidade * self.preco_momento
+    
