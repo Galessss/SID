@@ -122,9 +122,13 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="fw-bold text-dark">{{ produto.nome }}</div>
-                                    <span class="badge border text-secondary fw-normal">{{ produto.categoria.nome }}</span>
-                                </td>
+    <div class="fw-bold" style="color: rgb(69, 130, 191) !important;">
+        {{ produto.nome }}
+    </div>
+    <span class="badge border text-secondary fw-normal">
+        {{ produto.categoria.nome }}
+    </span>
+    </td>
                                 <td class="fw-bold text-success">R$ {{ produto.preco }}</td>
                                 <td class="text-center">
                                     <div class="form-check form-switch d-flex justify-content-center flex-column align-items-center">
