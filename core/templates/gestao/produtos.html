@@ -21,67 +21,72 @@
                 </div>
                 <div class="card-body">
                  <form method="POST" enctype="multipart/form-data" id="formProduto">
-    {% csrf_token %}
-    
-    <div class="mb-3">
-        <label class="form-label fw-bold text-secondary small">NOME DO PRODUTO</label>
-        {{ form.nome }} </div>
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary small">NOME DO PRODUTO</label>
+                        {{ form.nome }} 
+                    </div>
 
-    <div class="mb-3">
-        <label class="form-label fw-bold text-secondary small">PREÇO (R$)</label>
-        {{ form.preco }}
-    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary small">PREÇO (R$)</label>
+                        {{ form.preco }}
+                    </div>
 
-    <div class="mb-3">
-        <label class="form-label fw-bold text-secondary small">DESCRIÇÃO</label>
-        {{ form.descricao }}
-    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary small">DESCRIÇÃO</label>
+                        {{ form.descricao }}
+                    </div>
 
-   <div class="mb-4 p-3 rounded border border-secondary border-opacity-25" style="background-color: #2b3035;">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <label class="form-label fw-bold text-light small m-0">CATEGORIA</label>
-            <button type="button" class="btn btn-sm btn-link text-secondary text-decoration-none p-0" data-bs-toggle="modal" data-bs-target="#modalGerenciarCategorias">
-                <i class="bi bi-gear-fill me-1"></i> Gerenciar
-            </button>
-        </div>
-        
-        <div class="d-flex gap-2 mb-3">
-            <button type="button" class="btn btn-sm btn-success w-50 fw-bold" id="btn-existente" onclick="alternarModoCategoria('existente')">
-                <i class="bi bi-list-ul me-1"></i> Selecionar
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary w-50 fw-bold text-light" id="btn-nova" onclick="alternarModoCategoria('nova')">
-                <i class="bi bi-plus-lg me-1"></i> Criar Nova
-            </button>
-        </div>
+                   <div class="mb-4 p-3 rounded border border-secondary border-opacity-25" style="background-color: #2b3035;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <label class="form-label fw-bold text-light small m-0">CATEGORIA</label>
+                            <button type="button" class="btn btn-sm btn-link text-secondary text-decoration-none p-0" data-bs-toggle="modal" data-bs-target="#modalGerenciarCategorias">
+                                <i class="bi bi-gear-fill me-1"></i> Gerenciar
+                            </button>
+                        </div>
+                        
+                        <div class="d-flex gap-2 mb-3">
+                            <button type="button" class="btn btn-sm btn-success w-50 fw-bold" id="btn-existente" onclick="alternarModoCategoria('existente')">
+                                <i class="bi bi-list-ul me-1"></i> Selecionar
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary w-50 fw-bold text-light" id="btn-nova" onclick="alternarModoCategoria('nova')">
+                                <i class="bi bi-plus-lg me-1"></i> Criar Nova
+                            </button>
+                        </div>
 
-        <div id="box-categoria-existente">
-            <div class="input-group">
-                <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-tag-fill"></i></span>
-                {{ form.categoria }}
-            </div>
-            <div class="form-text text-secondary small mt-1">Escolha uma categoria já cadastrada.</div>
-        </div>
+                        <div id="box-categoria-existente">
+                            <div class="input-group">
+                                <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-tag-fill"></i></span>
+                                {{ form.categoria }}
+                            </div>
+                            <div class="form-text text-secondary small mt-1">Escolha uma categoria já cadastrada.</div>
+                        </div>
 
-        <div id="box-categoria-nova" class="d-none">
-            <div class="input-group">
-                <span class="input-group-text bg-dark border-secondary text-success"><i class="bi bi-magic"></i></span>
-                {{ form.nova_categoria }}
-            </div>
-            <div class="form-text text-secondary small mt-1">Digite o nome para criar automaticamente.</div>
-        </div>
-    </div>
+                        <div id="box-categoria-nova" class="d-none">
+                            <div class="input-group">
+                                <span class="input-group-text bg-dark border-secondary text-success"><i class="bi bi-magic"></i></span>
+                                <input type="text" id="input_nova_categoria_api" class="form-control bg-dark text-white border-secondary" placeholder="Nome da nova categoria">
+                                
+                                <button type="button" class="btn btn-primary fw-bold" onclick="salvarCategoriaAPI()">
+                                    <i class="bi bi-cloud-arrow-up-fill"></i> Salvar
+                                </button>
+                            </div>
+                            <div class="form-text text-secondary small mt-1">Digite e clique em salvar para adicionar à lista.</div>
+                        </div>
+                    </div>
 
-    <div class="mb-4">
-        <label class="form-label fw-bold text-secondary small">FOTO DO PRODUTO</label>
-        {{ form.foto }}
-    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary small">FOTO DO PRODUTO</label>
+                        {{ form.foto }}
+                    </div>
 
-    <div class="d-none">{{ form.ativo }}</div>
+                    <div class="d-none">{{ form.ativo }}</div>
 
-    <button type="submit" class="btn btn-success w-100 py-2 fw-bold shadow-sm">
-        <i class="bi bi-check-lg me-2"></i> CADASTRAR PRODUTO
-    </button>
-    </form>
+                    <button type="submit" class="btn btn-success w-100 py-2 fw-bold shadow-sm">
+                        <i class="bi bi-check-lg me-2"></i> CADASTRAR PRODUTO
+                    </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -117,9 +122,13 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="fw-bold text-dark">{{ produto.nome }}</div>
-                                    <span class="badge border text-secondary fw-normal">{{ produto.categoria.nome }}</span>
-                                </td>
+    <div class="fw-bold" style="color: rgb(69, 130, 191) !important;">
+        {{ produto.nome }}
+    </div>
+    <span class="badge border text-secondary fw-normal">
+        {{ produto.categoria.nome }}
+    </span>
+    </td>
                                 <td class="fw-bold text-success">R$ {{ produto.preco }}</td>
                                 <td class="text-center">
                                     <div class="form-check form-switch d-flex justify-content-center flex-column align-items-center">
@@ -151,82 +160,199 @@
 </div>
 
 <script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function salvarCategoriaAPI() {
+        const inputNova = document.getElementById('input_nova_categoria_api');
+        const nomeCategoria = inputNova.value.trim();
+        const selectCategoria = document.getElementById('id_categoria'); 
+
+        if (!nomeCategoria) {
+            alert('Por favor, digite um nome para a categoria.');
+            inputNova.focus();
+            return;
+        }
+
+        // Garante que a URL está correta conforme seu urls.py
+        const url = "{% url 'api_criar_categoria' %}"; 
+        const csrftoken = getCookie('csrftoken');
+
+        const btnSalvar = inputNova.nextElementSibling;
+        const textoOriginal = btnSalvar.innerHTML;
+        btnSalvar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        btnSalvar.disabled = true;
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({ nome: nomeCategoria })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucesso) {
+                const novaOpcao = new Option(data.nome, data.id);
+                selectCategoria.add(novaOpcao);
+                selectCategoria.value = data.id;
+                alternarModoCategoria('existente');
+                inputNova.value = '';
+            } else {
+                alert('Erro: ' + data.erro);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao comunicar com o servidor.');
+        })
+        .finally(() => {
+            btnSalvar.innerHTML = textoOriginal;
+            btnSalvar.disabled = false;
+        });
+    }
+
     function alternarModoCategoria(modo) {
         const boxExistente = document.getElementById('box-categoria-existente');
         const boxNova = document.getElementById('box-categoria-nova');
         const btnExistente = document.getElementById('btn-existente');
         const btnNova = document.getElementById('btn-nova');
-        
-        // Campos do Django (pelos IDs padrões gerados)
-        const inputNova = document.getElementById('id_nova_categoria');
-        const selectExistente = document.getElementById('id_categoria');
+        const inputNova = document.getElementById('input_nova_categoria_api');
 
         if (modo === 'existente') {
-            // Mostra o Select, Esconde o Input
             boxExistente.classList.remove('d-none');
             boxNova.classList.add('d-none');
-            
-            // Estilo dos Botões
             btnExistente.classList.add('btn-success');
             btnExistente.classList.remove('btn-outline-secondary', 'text-light');
-            
             btnNova.classList.add('btn-outline-secondary', 'text-light');
             btnNova.classList.remove('btn-success');
-
-            // Limpa o valor da nova categoria para evitar conflito no backend
-            if(inputNova) inputNova.value = '';
-
         } else {
-            // Mostra o Input, Esconde o Select
             boxExistente.classList.add('d-none');
             boxNova.classList.remove('d-none');
-
-            // Estilo dos Botões
             btnNova.classList.add('btn-success');
             btnNova.classList.remove('btn-outline-secondary', 'text-light');
-
             btnExistente.classList.add('btn-outline-secondary', 'text-light');
             btnExistente.classList.remove('btn-success');
-            
-            // Reseta o select
-            if(selectExistente) selectExistente.selectedIndex = 0;
-            
-            // Foca no input para digitar logo
             if(inputNova) inputNova.focus();
         }
     }
+
+    // Função para alternar status do produto (switch)
+    function alternarStatus(id) {
+        const url = `/api/alternar-status/${id}/`;
+        const label = document.getElementById(`label-${id}`);
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'sucesso') {
+                if (data.ativo) {
+                    label.textContent = "ATIVO";
+                    label.classList.remove("text-muted");
+                    label.classList.add("text-success");
+                } else {
+                    label.textContent = "INATIVO";
+                    label.classList.remove("text-success");
+                    label.classList.add("text-muted");
+                }
+            } else {
+                alert('Erro ao alterar status');
+            }
+        });
+    }
+
+
+    // Função para excluir categoria via API
+function excluirCategoria(id, nome) {
+    if (!confirm(`Tem certeza que deseja excluir a categoria "${nome}"?`)) return;
+
+    // URL da API (deve bater com seu urls.py)
+    const url = `/api/excluir-categoria/${id}/`; 
+    const csrftoken = getCookie('csrftoken');
+
+    // Feedback visual (opcional: mudar ícone para loading)
+    const btnRow = document.getElementById(`cat-row-${id}`);
+    btnRow.style.opacity = '0.5';
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'sucesso') {
+            // 1. Remove a linha da lista no Modal
+            if (btnRow) btnRow.remove();
+
+            // 2. Remove a opção do Select Principal (id_categoria) para sincronizar
+            const select = document.getElementById('id_categoria');
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value == id) {
+                    select.remove(i);
+                    break;
+                }
+            }
+            
+            // Feedback simples (opcional)
+            // alert('Categoria excluída.');
+        } else {
+            // Caso tenha erro (ex: tem produtos vinculados)
+            alert('Erro: ' + data.mensagem);
+            btnRow.style.opacity = '1'; // Restaura opacidade
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao comunicar com o servidor.');
+        btnRow.style.opacity = '1';
+    });
+}
+
+
 </script>
 
-
 <style>
-    /* Força os inputs do Django a ficarem escuros */
     .form-control, .form-select {
-        background-color: #212529 !important; /* Cor de fundo escura */
-        border-color: #495057 !important;     /* Borda cinza */
-        color: #fff !important;               /* Texto branco */
-    }
-    
-    .form-control:focus, .form-select:focus {
         background-color: #212529 !important;
-        border-color: #198754 !important;     /* Borda verde ao focar */
-        box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25) !important;
+        border-color: #495057 !important;
         color: #fff !important;
     }
-
-    /* Placeholder mais claro */
+    .form-control:focus, .form-select:focus {
+        border-color: #198754 !important;
+        box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25) !important;
+    }
     ::placeholder { 
         color: #adb5bd !important;
         opacity: 0.5; 
     }
-
-    /* Ajuste para o input de arquivo */
     input[type="file"]::file-selector-button {
         background-color: #343a40;
         color: white;
         border: none;
     }
 </style>
-
 
 <div class="modal fade" id="modalGerenciarCategorias" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -242,7 +368,8 @@
                     {% for cat in form.fields.categoria.queryset %}
                     <li class="list-group-item bg-dark text-white border-secondary d-flex justify-content-between align-items-center" id="cat-row-{{ cat.id }}">
                         <span>{{ cat.nome }}</span>
-                        <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="excluirCategoria({{ cat.id }}, '{{ cat.nome }}')">
+                        <button type="button" class="btn btn-sm btn-outline-danger border-0" 
+                                onclick="excluirCategoria({{ cat.id }}, '{{ cat.nome|escapejs }}')">
                             <i class="bi bi-trash-fill"></i>
                         </button>
                     </li>
@@ -258,77 +385,6 @@
     </div>
 </div>
 
-<script>
-    // Função existente de alternar (mantida)
-    function alternarModoCategoria(modo) {
-        // ... (seu código anterior aqui) ...
-        const boxExistente = document.getElementById('box-categoria-existente');
-        const boxNova = document.getElementById('box-categoria-nova');
-        const btnExistente = document.getElementById('btn-existente');
-        const btnNova = document.getElementById('btn-nova');
-        const inputNova = document.getElementById('id_nova_categoria');
-        const selectExistente = document.getElementById('id_categoria');
 
-        if (modo === 'existente') {
-            boxExistente.classList.remove('d-none');
-            boxNova.classList.add('d-none');
-            btnExistente.classList.add('btn-success');
-            btnExistente.classList.remove('btn-outline-secondary', 'text-light');
-            btnNova.classList.add('btn-outline-secondary', 'text-light');
-            btnNova.classList.remove('btn-success');
-            if(inputNova) inputNova.value = '';
-        } else {
-            boxExistente.classList.add('d-none');
-            boxNova.classList.remove('d-none');
-            btnNova.classList.add('btn-success');
-            btnNova.classList.remove('btn-outline-secondary', 'text-light');
-            btnExistente.classList.add('btn-outline-secondary', 'text-light');
-            btnExistente.classList.remove('btn-success');
-            if(selectExistente) selectExistente.selectedIndex = 0;
-            if(inputNova) inputNova.focus();
-        }
-    }
-
-    // NOVA FUNÇÃO: Excluir Categoria
-    function excluirCategoria(id, nome) {
-        if (!confirm(`Tem certeza que deseja excluir a categoria "${nome}"?`)) return;
-
-        const csrftoken = getCookie('csrftoken'); // Usa sua função getCookie existente
-
-        fetch(`/api/excluir-categoria/${id}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrftoken,
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'sucesso') {
-                // 1. Remove da lista do Modal
-                const row = document.getElementById(`cat-row-${id}`);
-                if (row) row.remove();
-
-                // 2. Remove do Select Principal (sem recarregar a página)
-                const select = document.getElementById('id_categoria');
-                for (let i = 0; i < select.options.length; i++) {
-                    if (select.options[i].value == id) {
-                        select.remove(i);
-                        break;
-                    }
-                }
-                
-                // Feedback visual simples
-                // alert('Categoria excluída com sucesso.'); 
-            } else {
-                alert('Erro: ' + data.mensagem);
-            }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            alert('Erro ao comunicar com o servidor.');
-        });
-    }
-</script>
 
 {% endblock %}

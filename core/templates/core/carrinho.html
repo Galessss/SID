@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+    nav, .navbar, footer, .footer { display: none !important; }
+
+    :root {
+        --bg-body: #121212;
+        --bg-card: #1E1E1E;
+        --border-color: #333;
+        --green: #2ecc71;
+        --red: #ff4d4d;
+        --text-main: #fff;
+        --text-muted: #aaa;
+    }
+
+    body { background-color: var(--bg-body); font-family: 'Poppins', sans-serif; color: var(--text-main); }
+    .checkout-container { max-width: 600px; margin: 40px auto; padding: 0 15px; }
+    .card-box { background-color: var(--bg-card); border-radius: 20px; padding: 25px; border: 1px solid var(--border-color); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+    
+    .checkout-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; }
+    .checkout-title { font-size: 20px; font-weight: 700; }
+
+    .item-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #2a2a2a; }
+    .item-img { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: #333; }
+    .btn-trash { color: var(--red); background: none; border: none; cursor: pointer; padding: 5px; transition: 0.2s; }
+    .btn-trash:hover { transform: scale(1.2); }
+
+    .form-label { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 5px; display: block; text-transform: uppercase; letter-spacing: 1px; }
+    .form-input { width: 100%; background: #121212; border: 1px solid var(--border-color); color: white; padding: 12px 15px; border-radius: 12px; font-size: 15px; margin-bottom: 15px; transition: 0.3s; }
+    .form-input:focus { border-color: var(--green); outline: none; box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.2); }
+
+    .address-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 15px; }
+
+    .payment-options { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .payment-radio { display: none; }
+    .payment-label { background: #2a2a2a; border: 1px solid var(--border-color); border-radius: 12px; padding: 15px 5px; text-align: center; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    .payment-radio:checked + .payment-label { background: rgba(46, 204, 113, 0.1); border-color: var(--green); color: var(--green); }
+
+    .btn-submit { width: 100%; background: var(--green); color: #000; font-weight: 700; padding: 15px; border: none; border-radius: 50px; font-size: 16px; cursor: pointer; transition: 0.3s; }
+    .btn-submit:hover { background: #27ae60; transform: translateY(-2px); }
+    .btn-return { width: 100%; background: transparent; color: var(--text-muted); font-weight: 600; padding: 12px; border: 1px solid var(--border-color); border-radius: 50px; font-size: 14px; text-decoration: none; display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 15px; }
+    .btn-delete-all { width: 100%; background: transparent; color: var(--red); border: 1px solid rgba(255, 77, 77, 0.2); font-weight: 600; padding: 10px; border-radius: 50px; font-size: 13px; margin-top: 10px; cursor: pointer; transition: 0.2s; }
+    .btn-delete-all:hover { background: rgba(255, 77, 77, 0.1); }
+</style>
+
+<div class="checkout-container">
+    <div class="card-box">
+        <div class="checkout-header">
+            <a href="{% url 'cardapio' %}" class="btn-back"><i class="bi bi-arrow-left"></i></a>
+            <h2 class="checkout-title">Finalizar Pedido</h2>
+            <div style="width: 24px;"></div>
+        </div>
+
+        {% if itens %}
+            <form action="{% url 'finalizar_pedido' %}" method="POST" id="formFinalizar">
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    {% for item in itens %}
+                    <div class="item-row">
+                        <div class="d-flex align-items-center gap-3">
+                            {% if item.produto.foto %}<img src="{{ item.produto.foto.url }}" class="item-img">{% else %}<div class="item-img d-flex align-items-center justify-content-center"><i class="bi bi-image"></i></div>{% endif %}
+                            <div>
+                                <div style="font-weight: 600;">{{ item.produto.nome }}</div>
+                                <div style="font-size: 13px; color: var(--text-muted);">{{ item.quantidade }}x R$ {{ item.produto.preco }}</div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold">R$ {{ item.subtotal }}</div>
+                            <button type="submit" 
+                                    formaction="{% url 'remover_item_carrinho' item.id %}" 
+                                    class="btn-trash" 
+                                    formnovalidate>
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <h5 class="mb-3 fw-bold text-success small">DADOS PESSOAIS</h5>
+                <label class="form-label">Nome Completo</label>
+                <input type="text" name="nome_cliente" class="form-input" placeholder="Seu nome" required>
+                
+                <label class="form-label">WhatsApp</label>
+                <input type="tel" name="telefone" class="form-input" placeholder="(63) 9...." required>
+                
+                <h5 class="mb-3 fw-bold text-success small mt-2">ENDEREÇO DE ENTREGA</h5>
+                
+                <label class="form-label">Rua / Alameda / Avenida</label>
+                <input type="text" name="rua" class="form-input" placeholder="Ex: Rua das Flores" required>
+
+                <div class="address-grid">
+                    <div>
+                        <label class="form-label">Número</label>
+                        <input type="text" name="numero" class="form-input" placeholder="Ex: 12" required>
+                    </div>
+                    <div>
+                        <label class="form-label">Bairro</label>
+                        <input type="text" name="bairro" class="form-input" placeholder="Ex: Centro" required>
+                    </div>
+                </div>
+
+                <h5 class="mb-3 fw-bold text-success small mt-2">PAGAMENTO</h5>
+                <div class="payment-options">
+                    <label><input type="radio" name="forma_pagamento" value="credito" class="payment-radio" required><div class="payment-label"><span>Crédito</span></div></label>
+                    <label><input type="radio" name="forma_pagamento" value="debito" class="payment-radio"><div class="payment-label"><span>Débito</span></div></label>
+                    <label><input type="radio" name="forma_pagamento" value="dinheiro" class="payment-radio"><div class="payment-label"><span>Dinheiro</span></div></label>
+                </div>
+
+                <div class="mt-4 pt-3 border-top border-secondary">
+                    <div class="d-flex justify-content-between mb-3 fs-5 fw-bold">
+                        <span>Total</span>
+                        <span style="color: var(--green);">R$ {{ total|floatformat:2 }}</span>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Confirmar Pedido <i class="bi bi-whatsapp"></i></button>
+                    
+                    <a href="{% url 'cardapio' %}" class="btn-return">
+                        <i class="bi bi-plus-lg"></i> Adicionar mais itens
+                    </a>
+                </div>
+            </form>
+
+            <form action="{% url 'limpar_carrinho' %}" method="POST" onsubmit="return confirm('Esvaziar sacola?')">
+                {% csrf_token %}
+                <button type="submit" class="btn-delete-all">Limpar Carrinho</button>
+            </form>
+
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-basket text-muted display-1 opacity-25"></i>
+                <p class="mt-3 text-muted">Sua sacola está vazia.</p>
+                <a href="{% url 'cardapio' %}" class="btn-submit mt-3" style="text-decoration: none; display: block; text-align: center;">Ver Cardápio</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
