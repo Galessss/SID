@@ -1,10 +1,12 @@
-<!DOCTYPE html>
+{% load static %} <!DOCTYPE html>
 <html lang="pt-br" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}SID - Sistema Integrado{% endblock %}</title>
 
+    <link rel="shortcut icon" type="image/png" href="{% static 'img/pinguim_logo.png' %}" />
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
@@ -19,12 +21,23 @@
         }
         main { flex: 1; }
         .navbar-brand { font-weight: 600; letter-spacing: -0.5px; }
+        /* Ajuste fino para a imagem na navbar não quebrar o alinhamento */
+        .navbar-brand img {
+            transition: transform 0.2s;
+        }
+        .navbar-brand:hover img {
+            transform: scale(1.1);
+        }
         .offcanvas-body .nav-link {
             font-size: 1.1rem;
             padding: 12px 0;
             border-bottom: 1px solid var(--bs-border-color-translucent);
         }
         [data-bs-theme="dark"] .card { border-color: #373b3e; }
+        .navbar-brand img {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.05);
+}
     </style>
 </head>
 <body>
@@ -33,7 +46,7 @@
         <div class="container">
             
             <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'dashboard' %}">
-                <i class="bi bi-grid-1x2-fill text-primary"></i> 
+                <img src="{% static 'img/pinguim_logo.png' %}" alt="Logo SID" width="32" height="32" class="rounded-circle shadow-sm">
                 SID
             </a>
 
@@ -42,16 +55,13 @@
             </button>
 
             <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar">
-                
                 <div class="offcanvas-header border-bottom">
                     <h5 class="offcanvas-title fw-bold">
                         <i class="bi bi-list text-primary"></i> Menu
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
                 </div>
-
                 <div class="offcanvas-body pt-0">
-                    
                     {% if user.is_authenticated %}
                     <div class="d-lg-none bg-body-tertiary p-3 mb-3 mx-n3 border-bottom">
                         <div class="d-flex align-items-center justify-content-between">
@@ -64,7 +74,6 @@
                                     <small class="opacity-75">Gestor</small> 
                                 </div>
                             </div>
-                            
                             <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">
                                 <i class="bi bi-box-arrow-right"></i> Sair
                             </a>
@@ -74,38 +83,19 @@
 
                     <ul class="navbar-nav justify-content-start flex-grow-1 pe-3">
                         {% if user.is_authenticated %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'dashboard' %}">
-                                    <i class="bi bi-speedometer2 text-primary me-2 d-lg-none"></i> Dashboard
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'cardapio' %}" target="_blank">
-                                    <i class="bi bi-journal-text text-success me-2 d-lg-none"></i> Cardápio
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'produtos' %}">
-                                    <i class="bi bi-box-seam text-primary me-2 d-lg-none"></i> Produtos
-                                </a>
-                            </li>
-                            <li class="nav-item d-lg-none">
-                                <a class="nav-link" href="{% url 'perfil' %}">
-                                    <i class="bi bi-gear-fill text-secondary me-2"></i> Configurações & Perfil
-                                </a>
-                            </li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}"><i class="bi bi-speedometer2 text-primary me-2 d-lg-none"></i> Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'cardapio' %}" target="_blank"><i class="bi bi-journal-text text-success me-2 d-lg-none"></i> Ver Cardápio</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'produtos' %}"><i class="bi bi-box-seam text-primary me-2 d-lg-none"></i> Produtos</a></li>
+                            <li class="nav-item d-lg-none"><a class="nav-link" href="{% url 'perfil' %}"><i class="bi bi-gear-fill text-secondary me-2"></i> Configurações & Perfil</a></li>
                         {% endif %}
                     </ul>
 
                     <div class="d-flex align-items-center gap-3 mt-3 mt-lg-0">
-                        
                         <button class="btn btn-outline-secondary border-0 w-100 w-lg-auto text-start" id="bd-theme-toggle" onclick="toggleTheme()">
                             <i id="theme-icon" class="bi bi-moon-stars-fill"></i>
                             <span class="d-lg-none ms-2">Alternar Tema</span>
                         </button>
-
                         <div class="vr d-none d-lg-block mx-2"></div>
-
                         {% if user.is_authenticated %}
                             <div class="dropdown d-none d-lg-block ms-2">
                                 <a href="#" class="d-flex align-items-center link-body-emphasis text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
@@ -115,11 +105,7 @@
                                     <span class="ms-2 fw-medium">{{ user.username }}</span>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2">
-                                    <li>
-                                        <a class="dropdown-item py-2" href="{% url 'perfil' %}">
-                                            <i class="bi bi-gear-fill me-2 text-secondary"></i> Configurações & Perfil
-                                        </a>
-                                    </li>
+                                    <li><a class="dropdown-item py-2" href="{% url 'perfil' %}"><i class="bi bi-gear-fill me-2 text-secondary"></i> Configurações & Perfil</a></li>
                                     <li><hr class="dropdown-divider opacity-50"></li>
                                     <li>
                                         <a href="{% url 'logout' %}" class="dropdown-item text-danger py-2">
@@ -150,30 +136,21 @@
                 {% endfor %}
             </div>
         {% endif %}
-
-        {% block content %}
-        {% endblock %}
+        {% block content %}{% endblock %}
     </main>
-
     <footer class="py-3 mt-auto border-top bg-body-tertiary">
-        <div class="container text-center text-muted">
-            <small>&copy; 2026 SID. Design by <strong>Marcus Vinicius</strong>.</small>
-        </div>
+        <div class="container text-center text-muted"><small>&copy; 2026 SID. Design by <strong>MVB Desenvolvimento</strong>.</small></div>
     </footer>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
         const themeIcon = document.getElementById('theme-icon');
         const htmlElement = document.documentElement;
-
         function getPreferredTheme() {
             const storedTheme = localStorage.getItem('theme');
             if (storedTheme) return storedTheme;
             const hour = new Date().getHours();
             return (hour >= 18 || hour < 6) ? 'dark' : 'light';
         }
-
         function setTheme(theme) {
             htmlElement.setAttribute('data-bs-theme', theme);
             if (theme === 'dark') {
@@ -184,9 +161,7 @@
                 themeIcon.classList.add('bi-moon-stars-fill');
             }
         }
-
         setTheme(getPreferredTheme());
-
         function toggleTheme() {
             const newTheme = htmlElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
             localStorage.setItem('theme', newTheme);

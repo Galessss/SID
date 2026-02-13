@@ -24,27 +24,29 @@
         body {
             background-color: var(--bg-body);
             color: var(--text-main);
-            padding-bottom: 80px; 
+            padding-bottom: 100px; 
         }
 
-      
         header {
-            /* A imagem agora é definida via Inline Style no HTML abaixo para ser dinâmica */
             background-size: cover;
             background-position: center;
-            height: 200px;
+            height: 220px;
             display: flex;
             align-items: flex-end;
-            padding: 20px;
+            padding: 25px;
+            position: relative;
         }
 
-        .restaurant-info h1 {
-            font-size: 28px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        /* Overlay para garantir leitura do texto sobre a imagem */
+        header::after {
+            content: ''; position: absolute; top:0; left:0; width:100%; height:100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.2), var(--bg-body));
+            z-index: 1;
         }
-        
-        .restaurant-info p {
-            color: var(--primary); font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-        }
+
+        .restaurant-info { position: relative; z-index: 2; }
+        .restaurant-info h1 { font-size: 28px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        .restaurant-info p { color: var(--primary); font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.8); font-size: 14px; }
 
         /* --- NAVEGAÇÃO --- */
         .category-nav {
@@ -56,17 +58,17 @@
 
         .cat-btn {
             background-color: var(--bg-card); color: var(--text-sec); border: 1px solid #333;
-            padding: 8px 20px; border-radius: 50px; cursor: pointer; transition: 0.3s; font-size: 14px;
+            padding: 8px 22px; border-radius: 50px; cursor: pointer; transition: 0.3s; font-size: 14px;
         }
         .cat-btn.active, .cat-btn:hover {
             background-color: var(--primary); color: #000; font-weight: 600; border-color: var(--primary);
         }
 
         /* --- GRID --- */
-        .menu-section { padding: 20px; scroll-margin-top: 70px; } /* Ajuste para o scroll não cortar o título */
+        .menu-section { padding: 25px 20px; scroll-margin-top: 80px; }
 
         .section-title {
-            font-size: 20px; margin-bottom: 15px; border-left: 4px solid var(--primary); padding-left: 10px;
+            font-size: 20px; margin-bottom: 18px; border-left: 4px solid var(--primary); padding-left: 12px; font-weight: 700;
         }
 
         .products-grid {
@@ -81,8 +83,6 @@
         .product-card:active { transform: scale(0.98); }
 
         .product-img { width: 100%; height: 140px; object-fit: cover; }
-        
-        /* Placeholder para produtos sem foto */
         .img-placeholder {
             width: 100%; height: 140px; background-color: #333; display: flex; align-items: center; justify-content: center;
             color: #555; font-size: 2rem;
@@ -91,7 +91,7 @@
         .product-info { padding: 12px; display: flex; flex-direction: column; flex-grow: 1; }
         .product-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; color: var(--text-main); }
         .product-desc {
-            font-size: 11px; color: var(--text-sec); margin-bottom: 10px; line-height: 1.4;
+            font-size: 11px; color: var(--text-sec); margin-bottom: 12px; line-height: 1.4;
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
         }
 
@@ -99,131 +99,155 @@
         .price { color: var(--green); font-weight: 700; font-size: 16px; }
 
         .add-btn {
-            background-color: #333; color: white; border: none; width: 32px; height: 32px;
-            border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;
+            background-color: #333; color: white; border: none; width: 34px; height: 34px;
+            border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;
         }
-        .add-btn:hover { background-color: var(--primary); color: black; }
+        .add-btn:hover { background-color: var(--green); color: black; }
 
-        /* --- CARRINHO --- */
+        /* --- CARRINHO FLUTUANTE (DESIGN ATUALIZADO) --- */
         .floating-cart {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background-color: var(--primary); color: #000; width: 90%; max-width: 400px;
-            padding: 15px; border-radius: 50px; display: flex; justify-content: space-between; align-items: center;
-            font-weight: 700; box-shadow: 0 10px 20px rgba(255, 193, 7, 0.2); cursor: pointer; z-index: 999;
-            transition: bottom 0.3s; display: none; /* Começa oculto */
+            position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
+            background-color: var(--green); color: #000; width: 90%; max-width: 450px;
+            padding: 16px 25px; border-radius: 50px; display: flex; justify-content: space-between; align-items: center;
+            font-weight: 700; box-shadow: 0 10px 30px rgba(46, 204, 113, 0.3); z-index: 999;
+            transition: 0.3s; text-decoration: none; display: none;
         }
-        .cart-count { background-color: #000; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-right: 8px; }
+        .floating-cart:hover { transform: translateX(-50%) scale(1.03); filter: brightness(1.1); }
+        .cart-info { display: flex; align-items: center; gap: 12px; }
+        .cart-count { background-color: #000; color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px; }
 
     </style>
 </head>
 <body>
 
-    <header style="background-image: linear-gradient(to bottom, rgba(0,0,0,0.4), var(--bg-body)), url('{{ foto_capa }}');">
+<header style="background-image: url('{{ foto_capa }}');">
     <div class="restaurant-info">
         <h1>{{ nome_empresa }}</h1>
-        <p>{{ horario_funcionamento }}</p>
+        <p><i class="bi bi-clock me-1"></i> {{ horario_funcionamento }}</p>
     </div>
 </header>
 
-    <nav class="category-nav">
-        {% for categoria, produtos in cardapio.items %}
-            <button class="cat-btn {% if forloop.first %}active{% endif %}" 
-                    onclick="scrollToSection('cat-{{ forloop.counter }}')">
-                {{ categoria }}
-            </button>
-        {% endfor %}
-    </nav>
-
-    <main>
+<nav class="category-nav">
     {% for categoria in categorias %}
-        <section id="cat-{{ categoria.id }}" class="menu-section">
-            <h2 class="section-title">{{ categoria.nome }}</h2>
-            
-            <div class="products-grid">
-                {% for produto in categoria.produtos.all %}
-                    {% if produto.ativo %}
-                    <article class="product-card">
-                        {% if produto.foto %}
-                            <img src="{{ produto.foto.url }}" class="product-img" alt="{{ produto.nome }}">
-                        {% else %}
-                            <div class="img-placeholder"><i class="bi bi-image"></i></div>
-                        {% endif %}
+        <button class="cat-btn {% if forloop.first %}active{% endif %}" 
+                onclick="scrollToSection('cat-{{ categoria.id }}', this)">
+            {{ categoria.nome }}
+        </button>
+    {% endfor %}
+</nav>
 
-                        <div class="product-info">
-                            <h3 class="product-title">{{ produto.nome }}</h3>
-                            <p class="product-desc">{{ produto.descricao|default:"Delicioso e preparado na hora." }}</p>
-                            
-                            <div class="price-row">
-                                <span class="price">R$ {{ produto.preco }}</span>
-                                <button class="add-btn" onclick="adicionarAoCarrinho('{{ produto.nome }}', {{ produto.preco|stringformat:'f' }})">
-                                    <i class="bi bi-plus-lg"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </article>
+<main>
+    {% for categoria in categorias %}
+    <section id="cat-{{ categoria.id }}" class="menu-section">
+        <h2 class="section-title">{{ categoria.nome }}</h2>
+        
+        <div class="products-grid">
+            {% for produto in categoria.produtos.all %}
+                {% if produto.ativo %}
+                <article class="product-card">
+                    {% if produto.foto %}
+                        <img src="{{ produto.foto.url }}" class="product-img" alt="{{ produto.nome }}">
+                    {% else %}
+                        <div class="img-placeholder"><i class="bi bi-image"></i></div>
                     {% endif %}
-                {% empty %}
-                    <p class="text-muted small ps-3">Nenhum produto disponível nesta categoria.</p>
-                {% endfor %}
-            </div>
-        </section>
-    {% empty %}
-        <div style="text-align: center; padding: 40px; color: #555;">
-            <h3>Cardápio em manutenção 🛠️</h3>
-            <p>Estamos preparando novidades para você. Volte logo!</p>
+
+                    <div class="product-info">
+                        <h3 class="product-title">{{ produto.nome }}</h3>
+                        <p class="product-desc">{{ produto.descricao|default:"Preparado com os melhores ingredientes." }}</p>
+                        
+                        <div class="price-row">
+                            <span class="price">R$ {{ produto.preco }}</span>
+                            <button class="add-btn" id="btn-{{ produto.id }}" onclick="adicionarAoCarrinho({{ produto.id }})">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+                {% endif %}
+            {% endfor %}
         </div>
+    </section>
     {% endfor %}
 </main>
 
-    <div class="floating-cart" id="cartBar" onclick="alert('Funcionalidade de finalizar pedido em breve!')">
-        <div>
-            <span class="cart-count" id="count">0</span>
-            <span>Ver Sacola</span>
-        </div>
-        <span id="total">R$ 0,00</span>
+<a href="{% url 'ver_carrinho' %}" class="floating-cart" id="cartBar">
+    <div class="cart-info">
+        <span class="cart-count" id="count">0</span>
+        <span>Ver Sacola</span>
     </div>
+    <span id="total">R$ 0,00</span>
+</a>
 
-    <script>
-        let count = 0;
-        let total = 0;
-
-        function adicionarAoCarrinho(nome, preco) {
-            count++;
-            total += parseFloat(preco);
-            
-            // Atualiza os textos
-            document.getElementById('count').innerText = count;
-            document.getElementById('total').innerText = 'R$ ' + total.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-            
-            // Mostra a barra se for o primeiro item
-            const cartBar = document.getElementById('cartBar');
-            if (count === 1) {
-                cartBar.style.display = 'flex';
+<script>
+    // Função para pegar o token de segurança do Django
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
             }
-
-            // Animação de pulso
-            cartBar.style.transform = "translateX(-50%) scale(1.05)";
-            setTimeout(() => {
-                cartBar.style.transform = "translateX(-50%) scale(1)";
-            }, 200);
         }
+        return cookieValue;
+    }
 
-        function scrollToSection(id) {
-            const element = document.getElementById(id);
-            const headerOffset = 70; // Compensação do menu sticky
-            const elementPosition = element.getBoundingClientRect().top;
-            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+    function adicionarAoCarrinho(produtoId) {
+        const url = `/api/carrinho/adicionar/${produtoId}/`;
+        const csrftoken = getCookie('csrftoken');
+        const btn = document.getElementById(`btn-${produtoId}`);
 
-            window.scrollTo({
-                top: offsetPosition,
-                behavior: "smooth"
-            });
+        // Feedback visual no botão
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:12px; height:12px"></span>';
 
-            // Atualiza botões (Visual)
-            document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-        }
-    </script>
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'sucesso') {
+                // Atualiza a barra flutuante
+                const cartBar = document.getElementById('cartBar');
+                document.getElementById('count').innerText = data.qtd_total;
+                document.getElementById('total').innerText = 'R$ ' + data.valor_total.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                
+                cartBar.style.display = 'flex';
+
+                // Animação de pulso
+                cartBar.style.transform = "translateX(-50%) scale(1.05)";
+                setTimeout(() => { cartBar.style.transform = "translateX(-50%) scale(1)"; }, 200);
+            }
+            btn.innerHTML = '<i class="bi bi-plus-lg"></i>';
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            btn.innerHTML = '<i class="bi bi-plus-lg"></i>';
+        });
+    }
+
+    function scrollToSection(id, btn) {
+        const element = document.getElementById(id);
+        const headerOffset = 80;
+        const elementPosition = element.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+        window.scrollTo({
+            top: offsetPosition,
+            behavior: "smooth"
+        });
+
+        // Estilo ativo nos botões
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+</script>
 
 </body>
 </html>
