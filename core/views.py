@@ -9,8 +9,8 @@ from django.db.models import Sum, Prefetch
 from django.utils import timezone
 from django.http import JsonResponse
 from django.contrib import messages
-
-# Seus models e forms
+from .models import Produto, Pedido, ItemPedido, Configuracao, Categoria, Insumo
+from .forms import ProdutoForm, InsumoForm
 from .models import Produto, Pedido, ItemPedido, Configuracao, Categoria
 from .forms import ProdutoForm
 
@@ -487,3 +487,114 @@ def finalizar_pedido(request):
         request.session.flush() 
         return render(request, 'core/sucesso.html', {'pedido': pedido})
     return redirect('ver_carrinho')
+
+# No arquivo core/views.py
+
+@login_required
+def estoque_view(request):
+    if request.method == 'POST':
+        produto_id = request.POST.get('produto_id')
+        nova_quantidade = request.POST.get('quantidade')
+        produto = get_object_or_404(Produto, id=produto_id)
+        produto.estoque = nova_quantidade
+        produto.save()
+        messages.success(request, f"Estoque de {produto.nome} atualizado!")
+        return redirect('estoque')
+
+    lista_produtos = Produto.objects.all().order_by('nome')
+    return render(request, 'gestao/estoque.html', {'lista_produtos': lista_produtos})
+
+@login_required
+def estoque_insumos_view(request):
+    insumos = Insumo.objects.all().order_by('data_validade')
+    hoje = timezone.now().date()
+    
+    context = {
+        'insumos': insumos,
+        'hoje': hoje,
+    }
+    return render(request, 'gestao/estoque_insumos.html', context)
+
+
+# Adicione ao core/views.py
+
+@login_required
+def estoque_insumos_view(request):
+    # 1. Se for um POST, tenta SALVAR um novo insumo
+    if request.method == 'POST':
+        form = InsumoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Insumo adicionado ao estoque!')
+            return redirect('estoque_insumos') # Recarrega a mesma página limpa
+        else:
+            messages.error(request, 'Erro ao cadastrar insumo. Verifique os dados.')
+    else:
+        form = InsumoForm()
+
+    # 2. Lista apenas INSUMOS (não Produtos)
+    insumos = Insumo.objects.all().order_by('data_validade')
+    hoje = timezone.now().date()
+    
+    context = {
+        'insumos': insumos,
+        'form': form, # Passamos o form para usar no Modal ou página
+        'hoje': hoje,
+    }
+    return render(request, 'gestao/estoque_insumos.html', context)
+
+@login_required
+def deletar_insumo(request, id):
+    insumo = get_object_or_404(Insumo, id=id)
+    insumo.delete()
+    messages.success(request, 'Insumo removido com sucesso.')
+    return redirect('estoque_insumos')
+
+
+@login_required
+def estoque_insumos_view(request):
+    # Se enviou o formulário do Modal
+    if request.method == 'POST':
+        form = InsumoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Insumo cadastrado com sucesso!')
+            return redirect('estoque_insumos') # Recarrega a página
+        else:
+            messages.error(request, 'Erro ao cadastrar. Verifique os dados.')
+    else:
+        form = InsumoForm()
+
+    # Busca APENAS insumos (Matéria-prima)
+    insumos = Insumo.objects.all().order_by('data_validade')
+    hoje = timezone.now().date()
+
+    context = {
+        'insumos': insumos,
+        'form': form, # Envia o form para o Modal
+        'hoje': hoje
+    }
+    return render(request, 'gestao/estoque_insumos.html', context)
+
+@login_required
+def editar_insumo(request, id):
+    insumo = get_object_or_404(Insumo, id=id)
+    
+    if request.method == 'POST':
+        form = InsumoForm(request.POST, instance=insumo)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Insumo atualizado com sucesso!')
+            return redirect('estoque_insumos')
+    else:
+        form = InsumoForm(instance=insumo)
+    
+    return render(request, 'gestao/editar_insumo.html', {'form': form, 'insumo': insumo})
+
+# (Certifique-se de que esta função também esteja lá)
+@login_required
+def deletar_insumo(request, id):
+    insumo = get_object_or_404(Insumo, id=id)
+    insumo.delete()
+    messages.success(request, 'Insumo removido com sucesso.')
+    return redirect('estoque_insumos')
