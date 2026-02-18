@@ -77,13 +77,41 @@
 
                         <hr class="border-secondary my-4">
 
-                        <div class="d-grid gap-2">
+                        <div class="d-grid gap-3">
                             <button type="submit" class="btn btn-primary btn-lg fw-bold shadow-sm">
                                 <i class="bi bi-save me-2"></i> SALVAR ALTERAÇÕES
+                            </button>
+                            
+                            <button type="button" class="btn btn-outline-danger btn-lg fw-bold" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                <i class="bi bi-trash me-2"></i> EXCLUIR PRODUTO
                             </button>
                         </div>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold text-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Excluir Produto
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir o produto <strong>{{ produto.nome }}</strong>?</p>
+                <p class="small text-secondary mb-0">Esta ação é irreversível e removerá o item do cardápio.</p>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                
+                <a href="{% url 'deletar_produto' produto.id %}" class="btn btn-danger">
+                    Sim, Excluir Permanentemente
+                </a>
             </div>
         </div>
     </div>
