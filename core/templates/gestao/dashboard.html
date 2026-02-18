@@ -152,7 +152,33 @@
         </div>
     </div>
 </div>
+<td>
+    {% if p.id %}  {# Garante que o pedido tem um ID antes de tentar criar o link #}
+        
+        {% if p.solicitar_entrega %}
+            {% if p.status_entrega == 'AGUARDANDO' %}
+                <span class="badge bg-warning text-dark">
+                    <i class="bi bi-clock"></i> Aguardando Motoboy
+                </span>
+            {% elif p.status_entrega == 'EM_ROTA' %}
+                <span class="badge bg-primary">
+                    <i class="bi bi-bicycle"></i> Em Rota
+                </span>
+            {% elif p.status_entrega == 'ENTREGUE' %}
+                <span class="badge bg-success">
+                    <i class="bi bi-check-all"></i> Entregue
+                </span>
+            {% endif %}
+        {% else %}
+            <a href="{% url 'solicitar_entrega_loja' p.id %}" class="btn btn-sm btn-outline-info">
+                <i class="bi bi-send"></i> Chamar Entrega
+            </a>
+        {% endif %}
 
+    {% else %}
+        <span class="text-muted small">Sem ID</span>
+    {% endif %}
+</td>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {

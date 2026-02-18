@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-white"><i class="bi bi-shield-lock-fill text-danger"></i> Painel Admin</h2>
+            <div id="status-update" class="small text-success">
+                <i class="bi bi-sync"></i> Sincronizado em tempo real
+            </div>
+        </div>
+        <button type="button" class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalNovoUsuario">
+            <i class="bi bi-person-plus-fill"></i> Novo Usuário
+        </button>
+    </div>
+
+    <div class="card bg-dark border-secondary shadow">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 80px;">ID</th>
+                        <th>Usuário/Empresa</th>
+                        <th>Tipo</th>
+                        <th>Funcionamento</th>
+                        <th>Status</th>
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-corpo">
+                    <tr><td colspan="6" class="text-center text-muted py-5">Carregando dados...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalNovoUsuario" tabindex="-1" aria-labelledby="modalNovoUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <form action="{% url 'admin_criar_usuario' %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Cadastrar Nova Conta</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">{{ field.label|upper }}</label>
+                            {{ field }}
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Criar Conta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="alert alert-info py-2" style="font-size: 0.85rem;">
+    <h6 class="alert-heading fw-bold mb-1"><i class="bi bi-info-circle"></i> Requisitos para Cadastro:</h6>
+    <ul class="mb-0 ps-3">
+        <li><strong>Login:</strong> Deve ser único. Se você digitar um login que já existe, o sistema adicionará um número automaticamente (ex: gales1).</li>
+        <li><strong>Nome da Empresa:</strong> Pode ser repetido. Este é o nome que aparecerá no cardápio e nos pedidos.</li>
+        <li><strong>Senha:</strong> Recomendado mínimo de 8 caracteres, evitando nomes óbvios.</li>
+        <li><strong>E-mail:</strong> Deve ser um formato válido (exemplo@email.com).</li>
+    </ul>
+</div>
+<script>
+    async function carregarUsuarios() {
+        // Se o modal estiver aberto, não atualiza para não atrapalhar o preenchimento
+        if (document.querySelector('.modal.show')) return;
+
+        try {
+            const response = await fetch("{% url 'api_listar_usuarios' %}");
+            const data = await response.json();
+            const corpo = document.getElementById('tabela-corpo');
+            corpo.innerHTML = '';
+
+            data.usuarios.forEach(u => {
+                const badgeTipo = u.tipo_raw === 'ADMIN' ? 'bg-danger' : (u.tipo_raw === 'LOJISTA' ? 'bg-info text-dark' : 'bg-warning text-dark');
+                const badgeStatus = u.is_active ? 'bg-success' : 'bg-secondary';
+                const btnStatusClass = u.is_active ? 'btn-outline-warning' : 'btn-outline-success';
+                const btnStatusIcon = u.is_active ? 'bi-pause-circle' : 'bi-play-circle';
+
+                corpo.innerHTML += `
+                    <tr>
+                        <td class="text-secondary fw-bold">#${u.id}</td>
+                        <td>
+                            <div class="fw-bold">${u.username}</div>
+                            <small class="text-muted">${u.empresa}</small>
+                        </td>
+                        <td><span class="badge ${badgeTipo}">${u.tipo}</span></td>
+                        <td><small class="text-info"><i class="bi bi-clock"></i> ${u.horario}</small></td>
+                        <td><span class="badge ${badgeStatus}">${u.is_active ? 'Ativo' : 'Inativo'}</span></td>
+                        <td class="text-end">
+                            <a href="/admin-painel/status/${u.id}/" class="btn btn-sm ${btnStatusClass}">
+                                <i class="bi ${btnStatusIcon}"></i>
+                            </a>
+                            <a href="/admin-painel/excluir/${u.id}/" class="btn btn-sm btn-outline-danger ms-1" onclick="return confirm('Excluir permanentemente?')">
+                                <i class="bi bi-trash-fill"></i>
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            });
+        } catch (error) {
+            console.error("Erro ao carregar API:", error);
+        }
+    }
+
+    // Carrega ao abrir e atualiza a cada 5 segundos
+    carregarUsuarios();
+    setInterval(carregarUsuarios, 5000);
+</script>
+{% endblock %}

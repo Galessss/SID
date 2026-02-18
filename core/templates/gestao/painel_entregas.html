@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-white"><i class="bi bi-truck text-warning"></i> Painel de Entregas</h2>
+        <span class="badge bg-secondary">Logado como: {{ user.username }}</span>
+    </div>
+
+    <div class="row">
+        {% for p in pedidos %}
+        <div class="col-md-6 mb-4">
+            <div class="card bg-dark text-white border-secondary shadow h-100">
+                <div class="card-header border-secondary d-flex justify-content-between">
+                    <span class="fw-bold text-warning">Pedido #{{ p.id }}</span>
+                    {% if p.status_entrega == 'AGUARDANDO' %}
+                        <span class="badge bg-danger">Aguardando Coleta</span>
+                    {% elif p.status_entrega == 'EM_ROTA' %}
+                        <span class="badge bg-primary">Em Rota (Com Você)</span>
+                    {% endif %}
+                </div>
+
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-muted small fw-bold">DESTINATÁRIO</h6>
+                        <p class="mb-1 fw-bold fs-5">{{ p.nome_cliente }}</p>
+                        <p class="mb-1"><i class="bi bi-telephone"></i> {{ p.telefone }}</p>
+                        <div class="alert alert-secondary bg-opacity-10 border-secondary p-2 mt-2">
+                            <i class="bi bi-geo-alt-fill text-danger"></i> 
+                            {{ p.rua }}, Nº {{ p.numero }}<br>
+                            <small class="ms-4">{{ p.bairro }}</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="text-muted small fw-bold">ITENS</h6>
+                        <ul class="list-unstyled">
+                            {% for item in p.itens.all %}
+                                <li class="small border-bottom border-secondary py-1 d-flex justify-content-between">
+                                    <span>{{ item.quantidade }}x {{ item.produto.nome }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card-footer border-secondary bg-transparent">
+                    <div class="d-grid gap-2">
+                        {% if p.status_entrega == 'AGUARDANDO' %}
+                            <a href="{% url 'mudar_status_entrega' p.id 'EM_ROTA' %}" class="btn btn-primary fw-bold">
+                                <i class="bi bi-box-seam"></i> PEGAR PARA ENTREGA
+                            </a>
+                        {% elif p.status_entrega == 'EM_ROTA' %}
+                            <a href="{% url 'mudar_status_entrega' p.id 'ENTREGUE' %}" class="btn btn-success fw-bold">
+                                <i class="bi bi-check-circle-fill"></i> FINALIZAR ENTREGA
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center mt-5">
+            <i class="bi bi-clipboard-check display-1 text-muted"></i>
+            <h4 class="text-muted mt-3">Tudo entregue! Sem pedidos pendentes.</h4>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
