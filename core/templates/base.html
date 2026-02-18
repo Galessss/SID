@@ -82,13 +82,21 @@
                     {% endif %}
 
                     <ul class="navbar-nav justify-content-start flex-grow-1 pe-3">
-                        {% if user.is_authenticated %}
-                            <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}"><i class="bi bi-speedometer2 text-primary me-2 d-lg-none"></i> Dashboard</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'cardapio' %}" target="_blank"><i class="bi bi-journal-text text-success me-2 d-lg-none"></i> Ver Cardápio</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'produtos' %}"><i class="bi bi-box-seam text-primary me-2 d-lg-none"></i> Produtos</a></li>
-                            <li class="nav-item d-lg-none"><a class="nav-link" href="{% url 'perfil' %}"><i class="bi bi-gear-fill text-secondary me-2"></i> Configurações & Perfil</a></li>
-                        {% endif %}
-                    </ul>
+    <ul class="navbar-nav justify-content-start flex-grow-1 pe-3">
+    {% if user.is_authenticated %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}"><i class="bi bi-speedometer2 text-primary me-2 d-lg-none"></i> Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'cardapio' %}" target="_blank"><i class="bi bi-journal-text text-success me-2 d-lg-none"></i> Ver Cardápio</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'produtos' %}"><i class="bi bi-box-seam text-primary me-2 d-lg-none"></i> Produtos</a></li>
+        
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'estoque_insumos' %}">
+                <i class="bi bi-box-seam-fill text-warning me-2 d-lg-none"></i> Estoque de Insumos
+            </a>
+        </li>
+
+        <li class="nav-item d-lg-none"><a class="nav-link" href="{% url 'perfil' %}"><i class="bi bi-gear-fill text-secondary me-2"></i> Configurações & Perfil</a></li>
+    {% endif %}
+</ul>
 
                     <div class="d-flex align-items-center gap-3 mt-3 mt-lg-0">
                         <button class="btn btn-outline-secondary border-0 w-100 w-lg-auto text-start" id="bd-theme-toggle" onclick="toggleTheme()">

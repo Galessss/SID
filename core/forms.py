@@ -1,20 +1,24 @@
 from django import forms
-from .models import Produto, Configuracao, Categoria
+from .models import Produto, Configuracao, Categoria, Insumo
 
+# =============================================================================
+# 1. FORMULÁRIO DE PRODUTOS (CARDÁPIO)
+# =============================================================================
 class ProdutoForm(forms.ModelForm):
-    # Campo auxiliar para digitar uma nova categoria (não salva direto no Produto)
+    # Campo auxiliar para criar categorias dinamicamente
     nova_categoria = forms.CharField(
-        max_length=100,
-        required=False,
-        label="Ou Nova Categoria",
+        max_length=100, 
+        required=False, 
+        label="Ou Nova Categoria", 
         widget=forms.TextInput(attrs={
-            'class': 'form-control', 
-            'placeholder': 'Digite para criar uma nova (Ex: Sobremesas)'
+            'class': 'form-control',
+            'placeholder': 'Digite para criar uma nova'
         })
     )
 
     class Meta:
         model = Produto
+        # Mantenha apenas os campos que existem no modelo Produto
         fields = ['nome', 'descricao', 'preco', 'categoria', 'foto', 'ativo']
         widgets = {
             'nome': forms.TextInput(attrs={'class': 'form-control'}),
@@ -27,7 +31,7 @@ class ProdutoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ProdutoForm, self).__init__(*args, **kwargs)
-        # Torna o campo de seleção opcional, pois o usuário pode optar por digitar uma nova
+        # Permite que a categoria seja opcional caso o usuário use o campo 'nova_categoria'
         self.fields['categoria'].required = False
 
     def clean(self):
@@ -35,39 +39,57 @@ class ProdutoForm(forms.ModelForm):
         categoria = cleaned_data.get('categoria')
         nova_categoria = cleaned_data.get('nova_categoria')
 
-        # Validação: O usuário precisa ou selecionar uma existente OU digitar uma nova
         if not categoria and not nova_categoria:
-            raise forms.ValidationError("Por favor, selecione uma categoria existente ou digite o nome de uma nova.")
-        
+            raise forms.ValidationError("Selecione uma categoria existente ou digite uma nova.")
         return cleaned_data
 
     def save(self, commit=True):
-        # Pega a instância do produto mas não salva ainda no banco
         instance = super().save(commit=False)
-        
-        nova_categoria_nome = self.cleaned_data.get('nova_categoria')
+        nova_cat_nome = self.cleaned_data.get('nova_categoria')
 
-        if nova_categoria_nome:
-            # Se digitou algo, cria a categoria ou pega se já existir (evita duplicados)
+        if nova_cat_nome:
+            # Busca ou cria a categoria para evitar duplicidade
             categoria_obj, created = Categoria.objects.get_or_create(
-                nome__iexact=nova_categoria_nome,
-                defaults={'nome': nova_categoria_nome}
+                nome__iexact=nova_cat_nome,
+                defaults={'nome': nova_cat_nome}
             )
-            # Vincula a nova categoria ao produto
             instance.categoria = categoria_obj
         
         if commit:
             instance.save()
         return instance
 
+
+# =============================================================================
+# 2. FORMULÁRIO DE INSUMOS (ESTOQUE DE MATÉRIA-PRIMA)
+# =============================================================================
+class InsumoForm(forms.ModelForm):
+    class Meta:
+        model = Insumo
+        fields = ['nome', 'quantidade_atual', 'unidade_medida', 'preco_compra', 'data_entrada', 'data_validade']
+        widgets = {
+            'nome': forms.TextInput(attrs={'class': 'form-control'}),
+            'quantidade_atual': forms.NumberInput(attrs={'class': 'form-control'}),
+            'unidade_medida': forms.Select(attrs={'class': 'form-select'}),
+            'preco_compra': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'data_entrada': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'data_validade': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        }
+
+
+# =============================================================================
+# 3. FORMULÁRIO DE CONFIGURAÇÃO
+# =============================================================================
 class ConfiguracaoForm(forms.ModelForm):
     class Meta:
         model = Configuracao
         fields = [
-            'nome_empresa', 
-            'foto_capa', 
-            'horario_abertura', 
-            'horario_fechamento',
-            'meta_diaria',
-            'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'
+            'nome_empresa', 'foto_capa', 'horario_abertura', 'horario_fechamento',
+            'meta_diaria', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'
         ]
+        widgets = {
+            'horario_abertura': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'horario_fechamento': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'meta_diaria': forms.NumberInput(attrs={'class': 'form-control'}),
+            'nome_empresa': forms.TextInput(attrs={'class': 'form-control'}),
+        }
