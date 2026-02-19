@@ -137,30 +137,44 @@ from django.db.models import Sum
 
 
 
+import json
+from datetime import timedelta
+from django.db.models import Sum
+from django.utils import timezone
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+
 @login_required
 def dashboard_gestor(request):
-    # 1. Bloqueia entregadores de verem o painel financeiro
+    # 1. Bloqueia entregadores
     if hasattr(request.user, 'perfil') and request.user.perfil.tipo_usuario == 'ENTREGADORA':
         return redirect('painel_entregas')
 
     # 2. Busca a configuração da loja logada
     config, created = Configuracao.objects.get_or_create(loja=request.user)
     
-    # 3. BLINDAGEM: Filtra os pedidos APENAS desta loja
-    meus_pedidos = Pedido.objects.filter(loja=request.user)
+    # 3. Filtra os pedidos da loja que foram finalizados pelo cliente e NÃO FORAM CANCELADOS
+    meus_pedidos_validos = Pedido.objects.filter(
+        loja=request.user, 
+        finalizado=True
+    ).exclude(status_pedido='CANCELADO') # A MÁGICA DO DECREMENTO ESTÁ AQUI
     
-    hoje = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    hoje = timezone.localtime(timezone.now()).replace(hour=0, minute=0, second=0, microsecond=0)
     
-    # --- CÁLCULO DE VENDAS ---
+    # --- CÁLCULO DE VENDAS DINÂMICAS ---
     def calcular_faturamento(data_inicio):
-        return meus_pedidos.filter(
-            data_criacao__gte=data_inicio, 
-            finalizado=True
+        return meus_pedidos_validos.filter(
+            data_criacao__gte=data_inicio
         ).aggregate(total=Sum('valor_total'))['total'] or 0
 
     faturamento_hoje = calcular_faturamento(hoje)
-    faturamento_total = meus_pedidos.filter(finalizado=True).aggregate(total=Sum('valor_total'))['total'] or 0
-    total_pedidos = meus_pedidos.filter(finalizado=True).count()
+    faturamento_semanal = calcular_faturamento(hoje - timedelta(days=7))
+    faturamento_mensal = calcular_faturamento(hoje.replace(day=1))
+    
+    # Faturamento Absoluto (Total Histórico) e Contagem
+    faturamento_total = meus_pedidos_validos.aggregate(total=Sum('valor_total'))['total'] or 0
+    total_pedidos = meus_pedidos_validos.count()
+    
     visitas = config.visualizacoes_cardapio if config else 0
     
     # Meta de Vendas Diária
@@ -168,12 +182,15 @@ def dashboard_gestor(request):
     porcentagem_meta = (float(faturamento_hoje) / meta) * 100 if meta > 0 else 0
     progresso_barra = min(porcentagem_meta, 100)
 
-    # --- LÓGICA DOS GRÁFICOS (RESTAURADA) ---
-    # Busca os 5 produtos mais vendidos APENAS desta loja
-    top_produtos_raw = ItemPedido.objects.filter(pedido__loja=request.user, pedido__finalizado=True)\
-        .values('produto__nome')\
-        .annotate(total_vendido=Sum('quantidade'))\
-        .order_by('-total_vendido')[:5]
+    # --- LÓGICA DOS GRÁFICOS (Ignorando hambúrgueres de pedidos cancelados) ---
+    top_produtos_raw = ItemPedido.objects.filter(
+        pedido__loja=request.user, 
+        pedido__finalizado=True
+    ).exclude(
+        pedido__status_pedido='CANCELADO' # Bloqueio no gráfico
+    ).values('produto__nome')\
+     .annotate(total_vendido=Sum('quantidade'))\
+     .order_by('-total_vendido')[:5]
 
     chart_labels = [] 
     for i in range(6, -1, -1):
@@ -187,15 +204,16 @@ def dashboard_gestor(request):
         nome_prod = item['produto__nome']
         vendas_dia_a_dia = []
         for i in range(6, -1, -1):
-            inicio_janela = (hoje - timedelta(days=i)).replace(hour=0, minute=0, second=0)
-            fim_janela = (hoje - timedelta(days=i)).replace(hour=23, minute=59, second=59)
+            inicio_janela = (hoje - timedelta(days=i))
+            fim_janela = inicio_janela.replace(hour=23, minute=59, second=59)
             
-            # Filtra quantidade vendida por dia para compor as linhas do gráfico
             qtd = ItemPedido.objects.filter(
                 produto__nome=nome_prod,
                 pedido__loja=request.user,
                 pedido__finalizado=True,
                 pedido__data_criacao__range=(inicio_janela, fim_janela)
+            ).exclude(
+                pedido__status_pedido='CANCELADO'
             ).aggregate(s=Sum('quantidade'))['s'] or 0
             vendas_dia_a_dia.append(qtd)
         
@@ -209,7 +227,8 @@ def dashboard_gestor(request):
         })
     
     # Lista de Pedidos recentes na tabela
-    ultimos_pedidos = meus_pedidos.filter(finalizado=True).order_by('-data_criacao')[:10]
+    # Mantemos a busca normal aqui para que o lojista ainda possa VER os pedidos cancelados na lista com a tag vermelha
+    ultimos_pedidos = Pedido.objects.filter(loja=request.user, finalizado=True).order_by('-data_criacao')[:15]
 
     # --- ENVIO PARA O HTML ---
     context = {
@@ -217,14 +236,14 @@ def dashboard_gestor(request):
         'total_pedidos': total_pedidos,
         'visitas': visitas,
         'faturamento_hoje': faturamento_hoje,
+        'faturamento_semanal': faturamento_semanal,
+        'faturamento_mensal': faturamento_mensal,
         'meta': meta,
         'porcentagem_meta': round(porcentagem_meta, 1),
         'progresso_barra': progresso_barra,
-        'faturamento_semanal': calcular_faturamento(hoje - timedelta(days=7)),
-        'faturamento_mensal': calcular_faturamento(hoje.replace(day=1)),
         'config': config,
-        'chart_labels_json': json.dumps(chart_labels),     # Devolve vida ao gráfico
-        'chart_datasets_json': json.dumps(chart_datasets), # Devolve vida ao gráfico
+        'chart_labels_json': json.dumps(chart_labels),
+        'chart_datasets_json': json.dumps(chart_datasets),
         'ultimos_pedidos': ultimos_pedidos,
     }
     
@@ -738,65 +757,67 @@ def produtos_view(request):
     })
 
 def cardapio_publico(request, nome_empresa_slug):
-    # 1. Identificamos a loja pela URL
     perfil = get_object_or_404(Perfil, nome_empresa__iexact=nome_empresa_slug.replace('-', ' '))
     loja_dona = perfil.user
 
-    # 2. FILTRAGEM DUPLA: Categorias da loja + Produtos DAQUELA loja dentro da categoria
     categorias = Categoria.objects.filter(loja=loja_dona).prefetch_related(
-        Prefetch(
-            'produtos', 
-            queryset=Produto.objects.filter(loja=loja_dona, ativo=True),
-            to_attr='produtos_da_loja'
-        )
+        Prefetch('produtos', queryset=Produto.objects.filter(loja=loja_dona, ativo=True), to_attr='produtos_da_loja')
     ).distinct()
 
-    # 3. Busca as configurações da loja atual
     config = Configuracao.objects.filter(loja=loja_dona).first()
 
-    # 4. Lógica de Horários e Dias de Funcionamento restaurada
     agora = timezone.localtime(timezone.now())
     hora_atual = agora.time()
     dia_semana_index = agora.weekday()
     
+    loja_aberta_agora = False
+    motivo_fechado = "Fechado no momento."
+    horario_texto = ""
+    dias_semana = []
+    foto_capa = ""
+
     if config:
-        # Incrementa as visualizações
         config.visualizacoes_cardapio += 1
         config.save()
+        foto_capa = config.foto_capa.url if config.foto_capa else ""
 
+        # Mapeia os dados do banco para o cálculo
         dias_semana = [
-            {'nome': 'Seg', 'aberto': config.segunda},
-            {'nome': 'Ter', 'aberto': config.terca},
-            {'nome': 'Qua', 'aberto': config.quarta},
-            {'nome': 'Qui', 'aberto': config.quinta},
-            {'nome': 'Sex', 'aberto': config.sexta},
-            {'nome': 'Sáb', 'aberto': config.sabado},
-            {'nome': 'Dom', 'aberto': config.domingo},
+            {'nome': 'Seg', 'aberto': config.segunda, 'abre': config.segunda_abertura, 'fecha': config.segunda_fechamento},
+            {'nome': 'Ter', 'aberto': config.terca, 'abre': config.terca_abertura, 'fecha': config.terca_fechamento},
+            {'nome': 'Qua', 'aberto': config.quarta, 'abre': config.quarta_abertura, 'fecha': config.quarta_fechamento},
+            {'nome': 'Qui', 'aberto': config.quinta, 'abre': config.quinta_abertura, 'fecha': config.quinta_fechamento},
+            {'nome': 'Sex', 'aberto': config.sexta, 'abre': config.sexta_abertura, 'fecha': config.sexta_fechamento},
+            {'nome': 'Sáb', 'aberto': config.sabado, 'abre': config.sabado_abertura, 'fecha': config.sabado_fechamento},
+            {'nome': 'Dom', 'aberto': config.domingo, 'abre': config.domingo_abertura, 'fecha': config.domingo_fechamento},
         ]
         
-        aberto_hoje = dias_semana[dia_semana_index]['aberto']
-        motivo_fechado = ""
-        loja_aberta_agora = False
-        
-        if not aberto_hoje:
-            motivo_fechado = "Hoje não abrimos."
-        else:
-            if config.horario_abertura < config.horario_fechamento:
-                loja_aberta_agora = config.horario_abertura <= hora_atual <= config.horario_fechamento
-            else:
-                loja_aberta_agora = hora_atual >= config.horario_abertura or hora_atual <= config.horario_fechamento
+        # Verifica se o Switch Mestre de energia está ligado
+        if config.loja_aberta:
+            hoje_info = dias_semana[dia_semana_index]
             
-            if not loja_aberta_agora:
-                motivo_fechado = f"Abrimos às {config.horario_abertura.strftime('%H:%M')}."
+            if not hoje_info['aberto']:
+                motivo_fechado = "Hoje não abrimos."
+            else:
+                h_abre = hoje_info['abre']
+                h_fecha = hoje_info['fecha']
+                
+                if h_abre and h_fecha:
+                    horario_texto = f"Aberto das {h_abre.strftime('%H:%M')} às {h_fecha.strftime('%H:%M')}"
+                    
+                    if h_abre < h_fecha:
+                        loja_aberta_agora = h_abre <= hora_atual <= h_fecha
+                    else: # Se passa da meia noite (ex: abre 18:00, fecha 02:00)
+                        loja_aberta_agora = hora_atual >= h_abre or hora_atual <= h_fecha
+                        
+                    if not loja_aberta_agora:
+                        motivo_fechado = f"Abrimos às {h_abre.strftime('%H:%M')}."
+                else:
+                    loja_aberta_agora = True
+                    horario_texto = "Aberto (Horário Flexível)"
+        else:
+            motivo_fechado = "Loja temporariamente fechada pelo gestor."
 
-        horario_texto = f"Aberto das {config.horario_abertura.strftime('%H:%M')} às {config.horario_fechamento.strftime('%H:%M')}"
-        foto_capa = config.foto_capa.url if config.foto_capa else ""
-    else:
-        # Valores padrão caso o lojista ainda não tenha configurado a loja
-        horario_texto, loja_aberta_agora, motivo_fechado, foto_capa = "", True, "", ""
-        dias_semana = []
-
-    # 5. Envia TUDO para o HTML
     context = {
         'nome_empresa': perfil.nome_empresa,
         'categorias': categorias,
@@ -807,10 +828,7 @@ def cardapio_publico(request, nome_empresa_slug):
         'esta_aberto_hoje': loja_aberta_agora,
         'motivo_fechado': motivo_fechado,
     }
-    
-    # Renderiza apontando para a pasta correta que corrigimos antes
     return render(request, 'core/cardapio.html', context)
-
 
 
 @login_required
@@ -826,3 +844,85 @@ def mudar_status_pedido(request, id):
         messages.success(request, f"O status do pedido #{pedido.id} foi atualizado para {pedido.get_status_pedido_display()}.")
     
     return redirect('dashboard')
+from django.db.models import Sum
+
+from django.db.models import Sum
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def perfil(request):
+    config, created = Configuracao.objects.get_or_create(loja=request.user)
+    
+    # 1. Busca os pedidos finalizados e EXCLUI os cancelados em uma única tacada
+    meus_pedidos_validos = Pedido.objects.filter(
+        loja=request.user, 
+        finalizado=True
+    ).exclude(status_pedido='CANCELADO')
+    
+    # 2. Faz a matemática apenas em cima dos válidos
+    total_faturamento = meus_pedidos_validos.aggregate(total=Sum('valor_total'))['total'] or 0
+    total_pedidos = meus_pedidos_validos.count()
+
+    # 3. Empacota e manda para o HTML
+    context = {
+        'config': config,
+        'total_faturamento': total_faturamento,
+        'total_pedidos': total_pedidos,
+        'visualizacoes': config.visualizacoes_cardapio,
+    }
+    
+    return render(request, 'core/perfil.html', context)
+
+
+
+@login_required
+@require_POST
+def atualizar_config(request):
+    config, created = Configuracao.objects.get_or_create(loja=request.user)
+    
+    novo_nome = request.POST.get('nome_empresa')
+    config.nome_empresa = novo_nome
+    config.loja_aberta = 'loja_aberta' in request.POST
+    
+    # SALVA HORÁRIOS E DIAS DE FORMA INDEPENDENTE
+    dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo']
+    for dia in dias:
+        # 1. Salva o status do Switch (Aberto/Fechado naquele dia)
+        setattr(config, dia, dia in request.POST)
+        
+        # 2. Salva as horas (Se estiver vazio, grava como None no banco)
+        abertura = request.POST.get(f'{dia}_abertura')
+        fechamento = request.POST.get(f'{dia}_fechamento')
+        setattr(config, f'{dia}_abertura', abertura if abertura else None)
+        setattr(config, f'{dia}_fechamento', fechamento if fechamento else None)
+        
+    if request.POST.get('meta_diaria'):
+        config.meta_diaria = request.POST.get('meta_diaria').replace(',', '.')
+        
+    if request.FILES.get('foto_capa'):
+        config.foto_capa = request.FILES['foto_capa']
+        
+    config.save()
+
+    if hasattr(request.user, 'perfil') and novo_nome:
+        request.user.perfil.nome_empresa = novo_nome
+        request.user.perfil.save()
+        
+    messages.success(request, 'Configurações atualizadas com sucesso!')
+    return redirect('perfil')
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+
+@login_required
+@require_POST
+def alternar_status_loja(request):
+    # Busca a configuração da loja
+    config, created = Configuracao.objects.get_or_create(loja=request.user)
+    
+    # Inverte o status atual (Se é True vira False, se é False vira True)
+    config.loja_aberta = not config.loja_aberta
+    config.save()
+    
+    # Devolve a resposta silenciosa para o JavaScript
+    return JsonResponse({'status': 'sucesso', 'aberta': config.loja_aberta})

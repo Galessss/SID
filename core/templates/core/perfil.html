@@ -1,126 +1,174 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container mt-4 mb-5">
 
     <div class="d-flex justify-content-between align-items-center mb-5">
         <div>
-            <h1 class="display-6 fw-bold text-white"><i class="bi bi-person-circle text-primary"></i> Perfil da Loja</h1>
-            <p class="text-secondary">Gerencie dados da empresa e acompanhe métricas gerais.</p>
+            <h1 class="display-6 fw-bold text-white"><i class="bi bi-person-lines-fill text-primary me-2"></i>Perfil da Loja</h1>
+            <p class="text-secondary">Gerencie os dados da sua empresa e o status de funcionamento.</p>
         </div>
-        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary rounded-pill">
-            <i class="bi bi-arrow-left"></i> Voltar ao Dashboard
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary rounded-pill fw-bold">
+            <i class="bi bi-arrow-left"></i> Voltar
         </a>
     </div>
 
-    <div class="row mb-5">
-        <div class="col-md-4 mb-3">
-            <div class="card border-0 shadow-lg h-100 text-white" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%); border-radius: 15px;">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="text-uppercase opacity-75 fw-bold small">Faturamento Total</h6>
-                            <h2 class="fw-bold mb-0 mt-2">R$ {{ total_faturamento|floatformat:2 }}</h2>
-                        </div>
-                        <i class="bi bi-cash-coin fs-1 opacity-50"></i>
-                    </div>
-                    <p class="mt-3 mb-0 small opacity-75">Soma de todas as vendas finalizadas.</p>
-                </div>
-            </div>
-        </div>
 
-        <div class="col-md-4 mb-3">
-            <div class="card border-0 shadow-lg h-100 text-white" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); border-radius: 15px;">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="text-uppercase opacity-75 fw-bold small">Total de Pedidos</h6>
-                            <h2 class="fw-bold mb-0 mt-2">{{ total_pedidos }}</h2>
-                        </div>
-                        <i class="bi bi-bag-check-fill fs-1 opacity-50"></i>
-                    </div>
-                    <p class="mt-3 mb-0 small opacity-75">Pedidos concluídos com sucesso.</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 mb-3">
-            <div class="card border-0 shadow-lg h-100 text-white" style="background: linear-gradient(135deg, #6610f2 0%, #520dc2 100%); border-radius: 15px;">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6 class="text-uppercase opacity-75 fw-bold small">Visitas no Cardápio</h6>
-                            <h2 class="fw-bold mb-0 mt-2">{{ visualizacoes }}</h2>
-                        </div>
-                        <i class="bi bi-eye-fill fs-1 opacity-50"></i>
-                    </div>
-                    <p class="mt-3 mb-0 small opacity-75">Clientes que acessaram seu link.</p>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card border-secondary border-opacity-25 shadow-lg bg-dark text-white" style="border-radius: 20px; background-color: #1e1e1e !important;">
-                <div class="card-header bg-transparent py-4 border-bottom border-secondary border-opacity-25">
-                    <h4 class="fw-bold m-0 text-white"><i class="bi bi-sliders me-2 text-primary"></i>Editar Configurações</h4>
+        <div class="col-lg-9">
+            <div class="card border-secondary border-opacity-25 shadow-lg bg-dark text-white" style="border-radius: 20px;">
+                <div class="card-header bg-black bg-opacity-25 py-4 border-bottom border-secondary border-opacity-25">
+                    <h4 class="fw-bold m-0 text-white"><i class="bi bi-sliders me-2 text-primary"></i>Configurações do Estabelecimento</h4>
                 </div>
-                <div class="card-body p-4">
+                
+                <div class="card-body p-4 p-md-5">
                     <form method="POST" enctype="multipart/form-data" action="{% url 'atualizar_config' %}">
                         {% csrf_token %}
                         
-                        <h6 class="text-uppercase text-primary fw-bold small mb-4">Informações Básicas</h6>
-                        <div class="row mb-4">
+                        <div class="card bg-black border-secondary border-opacity-50 mb-5 shadow-sm" style="border-radius: 15px;">
+                            <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="text-white mb-1 fw-bold"><i class="bi bi-door-open-fill text-warning me-2"></i>Status da Loja</h5>
+                                    <p class="text-secondary small mb-0">Ative para aceitar pedidos ou desative para fechar a loja imediatamente (ignora os horários programados).</p>
+                                </div>
+                                <div class="form-check form-switch" style="transform: scale(1.8); margin-right: 15px;">
+                                    <input class="form-check-input {% if config.loja_aberta %}bg-success border-success{% else %}bg-danger border-danger{% endif %}" type="checkbox" name="loja_aberta" id="switchLoja" {% if config.loja_aberta %}checked{% endif %}>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="text-uppercase text-primary fw-bold small mb-4 border-bottom border-secondary border-opacity-25 pb-2">Informações Básicas</h6>
+                        <div class="row mb-5">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold text-secondary small">NOME DA EMPRESA</label>
-                                <input type="text" name="nome_empresa" class="form-control bg-dark text-white border-secondary border-opacity-50" value="{{ config.nome_empresa }}">
+                                <input type="text" name="nome_empresa" class="form-control bg-dark text-white border-secondary border-opacity-50" value="{{ config.nome_empresa|default:'' }}">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold text-secondary small">META DIÁRIA (R$)</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-dark border-secondary text-secondary">R$</span>
-                                    <input type="number" name="meta_diaria" class="form-control bg-dark text-white border-secondary border-opacity-50" step="0.01" value="{{ config.meta_diaria|stringformat:'.2f' }}">
+                                    <input type="number" name="meta_diaria" class="form-control bg-dark text-white border-secondary border-opacity-50" step="0.01" value="{{ config.meta_diaria|default:'1000.00'|stringformat:'.2f' }}">
                                 </div>
                             </div>
                         </div>
 
-                        <h6 class="text-uppercase text-primary fw-bold small mb-4">Horário de Funcionamento</h6>
+                        <h6 class="text-uppercase text-primary fw-bold small mb-4 border-bottom border-secondary border-opacity-25 pb-2">Horário de Funcionamento Automático</h6>
                         <div class="row mb-4">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold text-success small text-uppercase">Abre às:</label>
+                                <label class="form-label fw-bold text-success small text-uppercase"><i class="bi bi-clock me-1"></i>Abre às:</label>
                                 <input type="time" name="horario_abertura" class="form-control bg-dark text-white border-secondary border-opacity-50" value="{{ config.horario_abertura|time:'H:i' }}">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold text-danger small text-uppercase">Fecha às:</label>
+                                <label class="form-label fw-bold text-danger small text-uppercase"><i class="bi bi-clock-history me-1"></i>Fecha às:</label>
                                 <input type="time" name="horario_fechamento" class="form-control bg-dark text-white border-secondary border-opacity-50" value="{{ config.horario_fechamento|time:'H:i' }}">
                             </div>
                         </div>
 
-                        <div class="mb-4 p-3 rounded border border-secondary border-opacity-25" style="background-color: #2b3035;">
-                            <label class="form-label fw-bold d-block mb-3 text-secondary small text-uppercase">Dias de Atendimento:</label>
-                            <div class="d-flex flex-wrap gap-3">
-                                <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="segunda" {% if config.segunda %}checked{% endif %}><label class="form-check-label text-white-50">Seg</label></div>
-                                <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="terca" {% if config.terca %}checked{% endif %}><label class="form-check-label text-white-50">Ter</label></div>
-                                <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="quarta" {% if config.quarta %}checked{% endif %}><label class="form-check-label text-white-50">Qua</label></div>
-                                <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="quinta" {% if config.quinta %}checked{% endif %}><label class="form-check-label text-white-50">Qui</label></div>
-                                <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="sexta" {% if config.sexta %}checked{% endif %}><label class="form-check-label text-white-50">Sex</label></div>
-                                <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="sabado" {% if config.sabado %}checked{% endif %}><label class="form-check-label text-white-50">Sáb</label></div>
-                                <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="domingo" {% if config.domingo %}checked{% endif %}><label class="form-check-label text-white-50">Dom</label></div>
+                        <h6 class="text-uppercase text-primary fw-bold small mb-4 border-bottom border-secondary border-opacity-25 pb-2">
+                            <i class="bi bi-calendar-week me-2"></i>Horários por Dia da Semana
+                        </h6>
+                        
+                        <div class="list-group mb-5 shadow-sm rounded-4">
+                            <div class="list-group-item bg-dark border-secondary border-opacity-25 p-3 d-flex flex-column flex-md-row justify-content-between align-items-center">
+                                <div class="form-check form-switch mb-3 mb-md-0">
+                                    <input class="form-check-input" type="checkbox" name="segunda" id="checkSeg" {% if config.segunda %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold text-white ms-2" for="checkSeg">Segunda-feira</label>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="time" name="segunda_abertura" class="form-control bg-black text-white border-secondary" value="{{ config.segunda_abertura|time:'H:i'|default:'' }}" title="Abertura">
+                                    <span class="text-secondary small">até</span>
+                                    <input type="time" name="segunda_fechamento" class="form-control bg-black text-white border-secondary" value="{{ config.segunda_fechamento|time:'H:i'|default:'' }}" title="Fechamento">
+                                </div>
+                            </div>
+
+                            <div class="list-group-item bg-dark border-secondary border-opacity-25 p-3 d-flex flex-column flex-md-row justify-content-between align-items-center">
+                                <div class="form-check form-switch mb-3 mb-md-0">
+                                    <input class="form-check-input" type="checkbox" name="terca" id="checkTer" {% if config.terca %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold text-white ms-2" for="checkTer">Terça-feira</label>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="time" name="terca_abertura" class="form-control bg-black text-white border-secondary" value="{{ config.terca_abertura|time:'H:i'|default:'' }}">
+                                    <span class="text-secondary small">até</span>
+                                    <input type="time" name="terca_fechamento" class="form-control bg-black text-white border-secondary" value="{{ config.terca_fechamento|time:'H:i'|default:'' }}">
+                                </div>
+                            </div>
+
+                            <div class="list-group-item bg-dark border-secondary border-opacity-25 p-3 d-flex flex-column flex-md-row justify-content-between align-items-center">
+                                <div class="form-check form-switch mb-3 mb-md-0">
+                                    <input class="form-check-input" type="checkbox" name="quarta" id="checkQua" {% if config.quarta %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold text-white ms-2" for="checkQua">Quarta-feira</label>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="time" name="quarta_abertura" class="form-control bg-black text-white border-secondary" value="{{ config.quarta_abertura|time:'H:i'|default:'' }}">
+                                    <span class="text-secondary small">até</span>
+                                    <input type="time" name="quarta_fechamento" class="form-control bg-black text-white border-secondary" value="{{ config.quarta_fechamento|time:'H:i'|default:'' }}">
+                                </div>
+                            </div>
+
+                            <div class="list-group-item bg-dark border-secondary border-opacity-25 p-3 d-flex flex-column flex-md-row justify-content-between align-items-center">
+                                <div class="form-check form-switch mb-3 mb-md-0">
+                                    <input class="form-check-input" type="checkbox" name="quinta" id="checkQui" {% if config.quinta %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold text-white ms-2" for="checkQui">Quinta-feira</label>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="time" name="quinta_abertura" class="form-control bg-black text-white border-secondary" value="{{ config.quinta_abertura|time:'H:i'|default:'' }}">
+                                    <span class="text-secondary small">até</span>
+                                    <input type="time" name="quinta_fechamento" class="form-control bg-black text-white border-secondary" value="{{ config.quinta_fechamento|time:'H:i'|default:'' }}">
+                                </div>
+                            </div>
+
+                            <div class="list-group-item bg-dark border-secondary border-opacity-25 p-3 d-flex flex-column flex-md-row justify-content-between align-items-center">
+                                <div class="form-check form-switch mb-3 mb-md-0">
+                                    <input class="form-check-input" type="checkbox" name="sexta" id="checkSex" {% if config.sexta %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold text-white ms-2" for="checkSex">Sexta-feira</label>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="time" name="sexta_abertura" class="form-control bg-black text-white border-secondary" value="{{ config.sexta_abertura|time:'H:i'|default:'' }}">
+                                    <span class="text-secondary small">até</span>
+                                    <input type="time" name="sexta_fechamento" class="form-control bg-black text-white border-secondary" value="{{ config.sexta_fechamento|time:'H:i'|default:'' }}">
+                                </div>
+                            </div>
+
+                            <div class="list-group-item bg-dark border-secondary border-opacity-25 p-3 d-flex flex-column flex-md-row justify-content-between align-items-center">
+                                <div class="form-check form-switch mb-3 mb-md-0">
+                                    <input class="form-check-input" type="checkbox" name="sabado" id="checkSab" {% if config.sabado %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold text-white ms-2" for="checkSab">Sábado</label>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="time" name="sabado_abertura" class="form-control bg-black text-white border-secondary" value="{{ config.sabado_abertura|time:'H:i'|default:'' }}">
+                                    <span class="text-secondary small">até</span>
+                                    <input type="time" name="sabado_fechamento" class="form-control bg-black text-white border-secondary" value="{{ config.sabado_fechamento|time:'H:i'|default:'' }}">
+                                </div>
+                            </div>
+
+                            <div class="list-group-item bg-dark border-secondary border-opacity-25 p-3 d-flex flex-column flex-md-row justify-content-between align-items-center">
+                                <div class="form-check form-switch mb-3 mb-md-0">
+                                    <input class="form-check-input" type="checkbox" name="domingo" id="checkDom" {% if config.domingo %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold text-white ms-2" for="checkDom">Domingo</label>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="time" name="domingo_abertura" class="form-control bg-black text-white border-secondary" value="{{ config.domingo_abertura|time:'H:i'|default:'' }}">
+                                    <span class="text-secondary small">até</span>
+                                    <input type="time" name="domingo_fechamento" class="form-control bg-black text-white border-secondary" value="{{ config.domingo_fechamento|time:'H:i'|default:'' }}">
+                                </div>
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label fw-bold text-secondary small text-uppercase">Foto de Capa do Cardápio</label>
-                            <input type="file" name="foto_capa" class="form-control bg-dark text-white border-secondary border-opacity-50">
+                        <h6 class="text-uppercase text-primary fw-bold small mb-4 border-bottom border-secondary border-opacity-25 pb-2">Aparência do Cardápio</h6>
+                        <div class="mb-5">
+                            <label class="form-label fw-bold text-secondary small text-uppercase">Foto de Capa</label>
+                            <input type="file" name="foto_capa" class="form-control bg-dark text-white border-secondary border-opacity-50 mb-2">
                             {% if config.foto_capa %}
-                                <div class="mt-2 text-secondary small">Atual: <a href="{{ config.foto_capa.url }}" target="_blank" class="text-primary text-decoration-none">Ver imagem</a></div>
+                                <div class="text-secondary small">
+                                    <i class="bi bi-image"></i> Capa atual: <a href="{{ config.foto_capa.url }}" target="_blank" class="text-primary text-decoration-none">Ver imagem</a>
+                                </div>
                             {% endif %}
                         </div>
 
                         <div class="d-grid mt-5">
                             <button type="submit" class="btn btn-primary btn-lg py-3 fw-bold shadow-sm rounded-pill">
-                                <i class="bi bi-save-fill me-2"></i> Salvar Alterações
+                                <i class="bi bi-save-fill me-2"></i> Salvar Todas as Configurações
                             </button>
                         </div>
                     </form>
@@ -134,6 +182,20 @@
     /* Força o input de tempo a mostrar o ícone de relógio no modo escuro */
     input[type="time"]::-webkit-calendar-picker-indicator {
         filter: invert(1);
+        cursor: pointer;
     }
 </style>
+
+<script>
+    // Animação visual para o switch mestre trocar de cor
+    document.getElementById('switchLoja').addEventListener('change', function() {
+        if(this.checked) {
+            this.classList.remove('bg-danger', 'border-danger');
+            this.classList.add('bg-success', 'border-success');
+        } else {
+            this.classList.remove('bg-success', 'border-success');
+            this.classList.add('bg-danger', 'border-danger');
+        }
+    });
+</script>
 {% endblock %}

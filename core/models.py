@@ -75,6 +75,9 @@ class Configuracao(models.Model):
     horario_abertura = models.TimeField(default='08:00')
     horario_fechamento = models.TimeField(default='18:00')
     meta_diaria = models.DecimalField(max_digits=10, decimal_places=2, default=1000.00)
+    meta_diaria = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    visualizacoes_cardapio = models.PositiveIntegerField(default=0)
+    loja_aberta = models.BooleanField(default=True, verbose_name="Loja Aberta Manualmente")
     
     # Dias de funcionamento
     segunda = models.BooleanField(default=True)
@@ -84,6 +87,20 @@ class Configuracao(models.Model):
     sexta = models.BooleanField(default=True)
     sabado = models.BooleanField(default=True)
     domingo = models.BooleanField(default=True)
+    segunda_abertura = models.TimeField(null=True, blank=True)
+    segunda_fechamento = models.TimeField(null=True, blank=True)
+    terca_abertura = models.TimeField(null=True, blank=True)
+    terca_fechamento = models.TimeField(null=True, blank=True)
+    quarta_abertura = models.TimeField(null=True, blank=True)
+    quarta_fechamento = models.TimeField(null=True, blank=True)
+    quinta_abertura = models.TimeField(null=True, blank=True)
+    quinta_fechamento = models.TimeField(null=True, blank=True)
+    sexta_abertura = models.TimeField(null=True, blank=True)
+    sexta_fechamento = models.TimeField(null=True, blank=True)
+    sabado_abertura = models.TimeField(null=True, blank=True)
+    sabado_fechamento = models.TimeField(null=True, blank=True)
+    domingo_abertura = models.TimeField(null=True, blank=True)
+    domingo_fechamento = models.TimeField(null=True, blank=True)
     
     def __str__(self):
         return self.nome_empresa
