@@ -159,13 +159,33 @@ class Pedido(models.Model):
     # Lógica para Entregadoras
     solicitar_entrega = models.BooleanField(default=False, verbose_name="Solicitar Entregadora?")
     
-    STATUS_ENTREGA = [
-        ('AGUARDANDO', 'Aguardando Coleta'),
-        ('EM_ROTA', 'Em Rota de Entrega'),
-        ('ENTREGUE', 'Entregue ao Cliente'),
-        ('CANCELADO', 'Entrega Cancelada')
+    STATUS_PEDIDO_CHOICES = [
+        ('PENDENTE', 'Pendente'),
+        ('PREPARANDO', 'Preparando'),
+        ('PRONTO', 'Pronto para Entrega'),
+        ('CANCELADO', 'Cancelado'),
     ]
-    status_entrega = models.CharField(max_length=20, choices=STATUS_ENTREGA, default='AGUARDANDO', blank=True, null=True)
+    status_pedido = models.CharField(
+        max_length=20, 
+        choices=STATUS_PEDIDO_CHOICES, 
+        default='PENDENTE'
+    )
+    
+    # 1. ADICIONE ESTA LISTA AQUI:
+    STATUS_ENTREGA = [
+        ('AGUARDANDO', 'Aguardando Entregador'),
+        ('EM_ROTA', 'Em Rota'),
+        ('ENTREGUE', 'Entregue'),
+    ]
+    
+    # 2. O seu campo já estava aqui, agora ele vai achar a lista de cima!
+    status_entrega = models.CharField(
+        max_length=20, 
+        choices=STATUS_ENTREGA, 
+        default='AGUARDANDO', 
+        blank=True, 
+        null=True
+    )
     
     entregador_responsavel = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='entregas')
 
