@@ -128,13 +128,15 @@
         <h2 class="section-title">{{ categoria.nome }}</h2>
         
         <div class="products-grid">
-            {% for produto in categoria.produtos.all %}
+            {% for produto in categoria.produtos_da_loja %}
                 {% if produto.ativo %}
                 <article class="product-card">
                     {% if produto.foto %}
                         <img src="{{ produto.foto.url }}" class="product-img" alt="{{ produto.nome }}">
                     {% else %}
-                        <div class="img-placeholder"><i class="bi bi-image"></i></div>
+                        <div class="product-img bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center">
+                            <i class="bi bi-image text-muted fs-2"></i>
+                        </div>
                     {% endif %}
 
                     <div class="product-info">
@@ -157,9 +159,16 @@
                     </div>
                 </article>
                 {% endif %}
+            {% empty %}
+                <p class="text-secondary small ps-3">Nenhum produto disponível nesta categoria.</p>
             {% endfor %}
         </div>
     </section>
+    {% empty %}
+    <div class="container text-center py-5">
+        <i class="bi bi-shop fs-1 text-secondary mb-3"></i>
+        <p class="text-secondary">Este lojista ainda não cadastrou produtos.</p>
+    </div>
     {% endfor %}
 </main>
 
@@ -170,6 +179,8 @@
     </div>
     <span id="total">R$ 0,00</span>
 </a>
+
+{% csrf_token %}
 
 <script>
     // Seus scripts anteriores...
@@ -198,7 +209,7 @@
         fetch(url, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': csrftoken,
+                'X-CSRFToken': csrftoken, // Agora o token existe e será enviado!
                 'Content-Type': 'application/json'
             }
         })

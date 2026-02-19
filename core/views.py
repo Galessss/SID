@@ -131,34 +131,46 @@ def admin_excluir_usuario(request, user_id):
 # =============================================================================
 # 3. GESTÃO LOJISTA (DASHBOARD)
 # =============================================================================
+import json
+from datetime import timedelta
+from django.db.models import Sum
+
+
 
 @login_required
 def dashboard_gestor(request):
-    # Bloqueia entregadores de verem o dashboard financeiro
+    # 1. Bloqueia entregadores de verem o painel financeiro
     if hasattr(request.user, 'perfil') and request.user.perfil.tipo_usuario == 'ENTREGADORA':
         return redirect('painel_entregas')
 
-    config = Configuracao.objects.filter(id=1).first()
+    # 2. Busca a configuração da loja logada
+    config, created = Configuracao.objects.get_or_create(loja=request.user)
+    
+    # 3. BLINDAGEM: Filtra os pedidos APENAS desta loja
+    meus_pedidos = Pedido.objects.filter(loja=request.user)
+    
     hoje = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
     
+    # --- CÁLCULO DE VENDAS ---
     def calcular_faturamento(data_inicio):
-        return Pedido.objects.filter(
+        return meus_pedidos.filter(
             data_criacao__gte=data_inicio, 
             finalizado=True
         ).aggregate(total=Sum('valor_total'))['total'] or 0
 
     faturamento_hoje = calcular_faturamento(hoje)
-    faturamento_total = Pedido.objects.filter(finalizado=True).aggregate(total=Sum('valor_total'))['total'] or 0
-    total_pedidos = Pedido.objects.filter(finalizado=True).count()
+    faturamento_total = meus_pedidos.filter(finalizado=True).aggregate(total=Sum('valor_total'))['total'] or 0
+    total_pedidos = meus_pedidos.filter(finalizado=True).count()
     visitas = config.visualizacoes_cardapio if config else 0
     
-    # Meta
+    # Meta de Vendas Diária
     meta = float(config.meta_diaria) if config and config.meta_diaria else 1000.0
     porcentagem_meta = (float(faturamento_hoje) / meta) * 100 if meta > 0 else 0
     progresso_barra = min(porcentagem_meta, 100)
 
-    # Gráfico
-    top_produtos_raw = ItemPedido.objects.filter(pedido__finalizado=True)\
+    # --- LÓGICA DOS GRÁFICOS (RESTAURADA) ---
+    # Busca os 5 produtos mais vendidos APENAS desta loja
+    top_produtos_raw = ItemPedido.objects.filter(pedido__loja=request.user, pedido__finalizado=True)\
         .values('produto__nome')\
         .annotate(total_vendido=Sum('quantidade'))\
         .order_by('-total_vendido')[:5]
@@ -178,8 +190,10 @@ def dashboard_gestor(request):
             inicio_janela = (hoje - timedelta(days=i)).replace(hour=0, minute=0, second=0)
             fim_janela = (hoje - timedelta(days=i)).replace(hour=23, minute=59, second=59)
             
+            # Filtra quantidade vendida por dia para compor as linhas do gráfico
             qtd = ItemPedido.objects.filter(
                 produto__nome=nome_prod,
+                pedido__loja=request.user,
                 pedido__finalizado=True,
                 pedido__data_criacao__range=(inicio_janela, fim_janela)
             ).aggregate(s=Sum('quantidade'))['s'] or 0
@@ -194,9 +208,10 @@ def dashboard_gestor(request):
             'fill': False
         })
     
-    # Lista de Pedidos recentes para o Dashboard
-    ultimos_pedidos = Pedido.objects.filter(finalizado=True).order_by('-data_criacao')[:10]
+    # Lista de Pedidos recentes na tabela
+    ultimos_pedidos = meus_pedidos.filter(finalizado=True).order_by('-data_criacao')[:10]
 
+    # --- ENVIO PARA O HTML ---
     context = {
         'faturamento_total': faturamento_total,
         'total_pedidos': total_pedidos,
@@ -208,9 +223,9 @@ def dashboard_gestor(request):
         'faturamento_semanal': calcular_faturamento(hoje - timedelta(days=7)),
         'faturamento_mensal': calcular_faturamento(hoje.replace(day=1)),
         'config': config,
-        'chart_labels_json': json.dumps(chart_labels),
-        'chart_datasets_json': json.dumps(chart_datasets),
-        'ultimos_pedidos': ultimos_pedidos, # Passando pedidos para a tabela
+        'chart_labels_json': json.dumps(chart_labels),     # Devolve vida ao gráfico
+        'chart_datasets_json': json.dumps(chart_datasets), # Devolve vida ao gráfico
+        'ultimos_pedidos': ultimos_pedidos,
     }
     
     return render(request, 'gestao/dashboard.html', context)
@@ -365,8 +380,12 @@ def solicitar_entrega_loja(request, pedido_id):
 @login_required
 def atualizar_config(request):
     if request.method == 'POST':
-        config, created = Configuracao.objects.get_or_create(id=1)
-        config.nome_empresa = request.POST.get('nome_empresa')
+        # 1. Pega a configuração exclusiva do lojista logado
+        config, created = Configuracao.objects.get_or_create(loja=request.user)
+        
+        novo_nome = request.POST.get('nome_empresa')
+        config.nome_empresa = novo_nome
+        
         config.horario_abertura = request.POST.get('horario_abertura')
         config.horario_fechamento = request.POST.get('horario_fechamento')
         
@@ -381,6 +400,12 @@ def atualizar_config(request):
             config.foto_capa = request.FILES['foto_capa']
             
         config.save()
+
+        # 2. O SEGREDO: Sincroniza o nome com o Perfil para o link do cardápio não quebrar!
+        if hasattr(request.user, 'perfil') and novo_nome:
+            request.user.perfil.nome_empresa = novo_nome
+            request.user.perfil.save()
+            
     return redirect('dashboard')
 
 @login_required
@@ -401,62 +426,45 @@ def perfil_view(request):
 # 8. VISÃO PÚBLICA (CARDÁPIO E CARRINHO)
 # =============================================================================
 
+from django.utils.text import slugify
+
+@login_required
+@login_required
 def cardapio_view(request):
-    config = Configuracao.objects.filter(id=1).first()
-    categorias = Categoria.objects.filter(produtos__ativo=True).distinct().prefetch_related(
-        Prefetch('produtos', queryset=Produto.objects.filter(ativo=True))
-    )
+    """
+    Redireciona o lojista para a sua URL pública exclusiva.
+    Procura o nome da empresa no Perfil e na Configuração para evitar falhas.
+    """
+    perfil = getattr(request.user, 'perfil', None)
+    config = getattr(request.user, 'configuracao', None)
+    
+    nome_loja = None
+    
+    # 1. Tenta pegar o nome pelo Perfil
+    if perfil and perfil.nome_empresa:
+        nome_loja = perfil.nome_empresa
+    # 2. Se não achar, tenta pegar pelas Configurações
+    elif config and config.nome_empresa:
+        nome_loja = config.nome_empresa
+        
+    if nome_loja:
+        # Sincroniza silenciosamente para evitar erros futuros
+        if perfil and not perfil.nome_empresa:
+            try:
+                perfil.nome_empresa = nome_loja
+                perfil.save()
+            except:
+                pass 
+                
+        # Gera o link amigável (ex: "SID Burguer" -> "sid-burguer")
+        slug = slugify(nome_loja)
+        return redirect('cardapio_publico', nome_empresa_slug=slug)
+    
+    # Se realmente estiver vazio nos dois lugares
+    messages.warning(request, "Por favor, preencha o Nome da Empresa nas configurações do seu painel para gerar o cardápio.")
+    return redirect('dashboard')
 
-    if config:
-        config.visualizacoes_cardapio += 1
-        config.save()
-        
-        agora = timezone.localtime(timezone.now())
-        hora_atual = agora.time()
-        dia_semana_index = agora.weekday()
-        
-        dias_semana = [
-            {'nome': 'Seg', 'aberto': config.segunda},
-            {'nome': 'Ter', 'aberto': config.terca},
-            {'nome': 'Qua', 'aberto': config.quarta},
-            {'nome': 'Qui', 'aberto': config.quinta},
-            {'nome': 'Sex', 'aberto': config.sexta},
-            {'nome': 'Sáb', 'aberto': config.sabado},
-            {'nome': 'Dom', 'aberto': config.domingo},
-        ]
-        
-        aberto_hoje = dias_semana[dia_semana_index]['aberto']
-        motivo_fechado = ""
-        loja_aberta_agora = False
-        
-        if not aberto_hoje:
-            motivo_fechado = "Hoje não abrimos."
-        else:
-            if config.horario_abertura < config.horario_fechamento:
-                loja_aberta_agora = config.horario_abertura <= hora_atual <= config.horario_fechamento
-            else:
-                loja_aberta_agora = hora_atual >= config.horario_abertura or hora_atual <= config.horario_fechamento
-            
-            if not loja_aberta_agora:
-                motivo_fechado = f"Abrimos às {config.horario_abertura.strftime('%H:%M')}."
 
-        horario_texto = f"Aberto das {config.horario_abertura.strftime('%H:%M')} às {config.horario_fechamento.strftime('%H:%M')}"
-        nome_empresa = config.nome_empresa
-        foto_capa = config.foto_capa.url if config.foto_capa else ""
-    else:
-        nome_empresa, foto_capa, horario_texto, loja_aberta_agora, motivo_fechado = "SID Burguer", "", "", True, ""
-        dias_semana = []
-
-    context = {
-        'nome_empresa': nome_empresa,
-        'horario_funcionamento': horario_texto,
-        'dias_semana': dias_semana,
-        'esta_aberto_hoje': loja_aberta_agora,
-        'motivo_fechado': motivo_fechado,
-        'foto_capa': foto_capa,
-        'categorias': categorias,
-    }
-    return render(request, 'core/cardapio.html', context)
 
 def _get_carrinho(request):
     if not request.session.session_key:
@@ -481,6 +489,7 @@ def remover_item_carrinho(request, item_id):
             messages.success(request, 'Item removido.')
     return redirect('ver_carrinho')
 
+
 def finalizar_pedido(request):
     if request.method == 'POST':
         pedido = _get_carrinho(request)
@@ -494,19 +503,36 @@ def finalizar_pedido(request):
         pedido.bairro = request.POST.get('bairro')
         pedido.numero = request.POST.get('numero')
         pedido.forma_pagamento = request.POST.get('forma_pagamento')
+        
+        # O pedido é finalizado, então o sistema criará um novo na próxima vez.
         pedido.finalizado = True
         pedido.save()
         
-        request.session.flush()
-        return render(request, 'core/sucesso.html', {'pedido': pedido})
+        # CORREÇÃO 2: O 'request.session.flush()' foi removido para evitar o logout.
+        
+        messages.success(request, 'Pedido finalizado com sucesso! A loja já está preparando.')
+        
+        # Redireciona de volta para o cardápio da loja (sem quebrar a rota multi-loja)
+        if pedido.loja and hasattr(pedido.loja, 'perfil') and pedido.loja.perfil.nome_empresa:
+            slug = slugify(pedido.loja.perfil.nome_empresa)
+            return redirect('cardapio_publico', nome_empresa_slug=slug)
+        else:
+            return redirect('cardapio')
+            
     return redirect('ver_carrinho')
+
 
 def limpar_carrinho(request):
     if request.method == 'POST':
         pedido = _get_carrinho(request)
         pedido.delete()
-        messages.success(request, 'Carrinho limpo.')
-    return redirect('cardapio')
+        messages.success(request, 'Carrinho esvaziado.')
+        
+    # Redireciona de volta para a página de onde o cliente veio (carrinho ou cardápio)
+    url_anterior = request.META.get('HTTP_REFERER', 'ver_carrinho')
+    return redirect(url_anterior)
+
+
 
 
 # =============================================================================
@@ -567,6 +593,12 @@ def alternar_status_produto(request, id):
 def adicionar_item_api(request, produto_id):
     pedido = _get_carrinho(request)
     produto = get_object_or_404(Produto, id=produto_id)
+    
+    # CORREÇÃO 1: Vincula o pedido à loja logo no primeiro clique
+    if not pedido.loja:
+        pedido.loja = produto.loja
+        pedido.save()
+        
     item, created = ItemPedido.objects.get_or_create(pedido=pedido, produto=produto, defaults={'preco': produto.preco, 'quantidade': 0})
     item.quantidade += 1
     item.save()
@@ -578,8 +610,9 @@ def adicionar_item_api(request, produto_id):
     return JsonResponse({
         'status': 'sucesso', 
         'qtd_total': pedido.itens.aggregate(Sum('quantidade'))['quantidade__sum'] or 0,
-        'valor_total': valor_total
+        'valor_total': float(valor_total) 
     })
+
 
 @login_required
 def dashboard_admin(request):
@@ -660,52 +693,6 @@ def admin_criar_usuario(request):
     return redirect('dashboard_admin')
 
 
-@login_required
-def dashboard_gestor(request):
-    # Filtra pedidos apenas da loja logada
-    pedidos_loja = Pedido.objects.filter(loja=request.user)
-    
-    # Busca a configuração específica desta loja
-    config, created = Configuracao.objects.get_or_create(loja=request.user)
-    
-    faturamento_hoje = pedidos_loja.filter(
-        data_criacao__gte=timezone.now().date(), 
-        finalizado=True
-    ).aggregate(total=Sum('valor_total'))['total'] or 0
-    
-    # ... restante da lógica filtrada
-    return render(request, 'gestao/dashboard.html', {'faturamento_hoje': faturamento_hoje, 'config': config})
-
-
-
-@login_required
-def dashboard_gestor(request):
-    # 1. Filtramos a configuração específica desta loja
-    config, created = Configuracao.objects.get_or_create(loja=request.user)
-    
-    hoje = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    
-    # 2. Blindagem: Filtramos TODOS os pedidos pela loja logada
-    meus_pedidos = Pedido.objects.filter(loja=request.user)
-    
-    faturamento_hoje = meus_pedidos.filter(
-        data_criacao__gte=hoje, 
-        finalizado=True
-    ).aggregate(total=Sum('valor_total'))['total'] or 0
-
-    faturamento_total = meus_pedidos.filter(finalizado=True).aggregate(total=Sum('valor_total'))['total'] or 0
-    
-    # Gráfico e Tabela também devem ser filtrados
-    ultimos_pedidos = meus_pedidos.filter(finalizado=True).order_by('-data_criacao')[:10]
-
-    context = {
-        'faturamento_total': faturamento_total,
-        'faturamento_hoje': faturamento_hoje,
-        'config': config,
-        'ultimos_pedidos': ultimos_pedidos,
-    }
-    return render(request, 'gestao/dashboard.html', context)
-
 
 @login_required
 def estoque_insumos_view(request):
@@ -756,21 +743,86 @@ def cardapio_publico(request, nome_empresa_slug):
     loja_dona = perfil.user
 
     # 2. FILTRAGEM DUPLA: Categorias da loja + Produtos DAQUELA loja dentro da categoria
-    # Usamos o Prefetch para criar um atributo 'produtos_filtrados' que só contém itens do dono
     categorias = Categoria.objects.filter(loja=loja_dona).prefetch_related(
         Prefetch(
             'produtos', 
             queryset=Produto.objects.filter(loja=loja_dona, ativo=True),
-            to_attr='produtos_da_loja' # Nome que usaremos no HTML
+            to_attr='produtos_da_loja'
         )
     ).distinct()
 
+    # 3. Busca as configurações da loja atual
     config = Configuracao.objects.filter(loja=loja_dona).first()
 
+    # 4. Lógica de Horários e Dias de Funcionamento restaurada
+    agora = timezone.localtime(timezone.now())
+    hora_atual = agora.time()
+    dia_semana_index = agora.weekday()
+    
+    if config:
+        # Incrementa as visualizações
+        config.visualizacoes_cardapio += 1
+        config.save()
+
+        dias_semana = [
+            {'nome': 'Seg', 'aberto': config.segunda},
+            {'nome': 'Ter', 'aberto': config.terca},
+            {'nome': 'Qua', 'aberto': config.quarta},
+            {'nome': 'Qui', 'aberto': config.quinta},
+            {'nome': 'Sex', 'aberto': config.sexta},
+            {'nome': 'Sáb', 'aberto': config.sabado},
+            {'nome': 'Dom', 'aberto': config.domingo},
+        ]
+        
+        aberto_hoje = dias_semana[dia_semana_index]['aberto']
+        motivo_fechado = ""
+        loja_aberta_agora = False
+        
+        if not aberto_hoje:
+            motivo_fechado = "Hoje não abrimos."
+        else:
+            if config.horario_abertura < config.horario_fechamento:
+                loja_aberta_agora = config.horario_abertura <= hora_atual <= config.horario_fechamento
+            else:
+                loja_aberta_agora = hora_atual >= config.horario_abertura or hora_atual <= config.horario_fechamento
+            
+            if not loja_aberta_agora:
+                motivo_fechado = f"Abrimos às {config.horario_abertura.strftime('%H:%M')}."
+
+        horario_texto = f"Aberto das {config.horario_abertura.strftime('%H:%M')} às {config.horario_fechamento.strftime('%H:%M')}"
+        foto_capa = config.foto_capa.url if config.foto_capa else ""
+    else:
+        # Valores padrão caso o lojista ainda não tenha configurado a loja
+        horario_texto, loja_aberta_agora, motivo_fechado, foto_capa = "", True, "", ""
+        dias_semana = []
+
+    # 5. Envia TUDO para o HTML
     context = {
         'nome_empresa': perfil.nome_empresa,
         'categorias': categorias,
         'config': config,
-        # ... outros dados de horário
+        'foto_capa': foto_capa,
+        'horario_funcionamento': horario_texto,
+        'dias_semana': dias_semana,
+        'esta_aberto_hoje': loja_aberta_agora,
+        'motivo_fechado': motivo_fechado,
     }
-    return render(request, 'gestao/cardapio.html', context)
+    
+    # Renderiza apontando para a pasta correta que corrigimos antes
+    return render(request, 'core/cardapio.html', context)
+
+
+
+@login_required
+@require_POST
+def mudar_status_pedido(request, id):
+    # Garante que o lojista só altere os pedidos da própria loja
+    pedido = get_object_or_404(Pedido, id=id, loja=request.user)
+    novo_status = request.POST.get('novo_status')
+    
+    if novo_status in ['PENDENTE', 'PREPARANDO', 'PRONTO', 'CANCELADO']:
+        pedido.status_pedido = novo_status
+        pedido.save()
+        messages.success(request, f"O status do pedido #{pedido.id} foi atualizado para {pedido.get_status_pedido_display()}.")
+    
+    return redirect('dashboard')
