@@ -1,66 +1,79 @@
-# SID - Sistema Integrado de Gestão 🚀
+# SID - Sistema Integrado de Delivery 🐧
+O SID é uma plataforma completa de gestão de vendas e logística, projetada para conectar lojistas, transportadoras e clientes finais em um ecossistema unificado e em tempo real. Desenvolvido com foco em agilidade operacional, o sistema oferece dashboards dinâmicos, gestão de frota robusta e monitoramento detalhado de entregas.
 
-O SID (Sistema Integrado) é um ecossistema de gestão empresarial (ERP) desenvolvido para automatizar processos de vendas, controle de estoque e análise de desempenho. Projetado para ser multiúso, o sistema se adapta tanto ao comércio de bens quanto à prestação de serviços que utilizam catálogos de itens.
+# 🚀 Principais Módulos
+# 1. Painel do Lojista (Dashboard)
+Gestão centralizada da operação de venda e produção.
 
-🛠️ Funcionalidades de Gestão
-📈 Inteligência Financeira e Dashboards
-Monitoramento Temporal: Visão detalhada do faturamento diário, semanal e mensal.
+Monitoramento em Tempo Real: Sincronização automática de novos pedidos com alertas sonoros.
 
-Controle de Metas: Sistema de barra de progresso em tempo real que compara o desempenho atual com a meta diária configurada pelo gestor.
+Gestão de Status: Fluxo completo desde "Pendente" até "Pronto" ou "Cancelado" via AJAX (sem recarregar a página).
 
-Evolução de Itens: Gráficos dinâmicos que mostram a tendência de saída dos produtos mais vendidos.
+Métricas Financeiras: Gráficos de evolução de vendas (Chart.js), faturamento diário/semanal/mensal e barra de progresso de metas.
 
-Métricas Vitalícias: Contador de faturamento total, volume de pedidos e engajamento do catálogo público.
+Catálogo & Estoque: Controle total de produtos e insumos.
 
-📦 Catálogo e Estoque Inteligente
-Gestão Ágil: Cadastro completo de itens com precificação, descrição e controle de imagens.
+# 2. Central de Despacho (Logística)
+Módulo exclusivo para transportadoras gerenciarem a distribuição.
 
-Categorização Dinâmica: Sistema de criação de categorias "on-the-fly" diretamente no formulário de cadastro de produtos.
+Atribuição Inteligente: O operador da central seleciona qual motoboy realizará cada entrega.
 
-Status em Tempo Real: Alternância instantânea de disponibilidade (Ativo/Inativo) via API, refletindo imediatamente na visão do cliente.
+Monitoramento de Frota: Acompanhamento visual de pedidos "Aguardando Atribuição" vs. "Em Rota".
 
-Manutenção de Dados: Gerenciador de categorias com travas de segurança contra exclusão de itens vinculados.
+Segurança Operacional: Bloqueio de cancelamento para pedidos já entregues e exclusão de auto-atribuição para operadores.
 
-🌐 Interface Pública (Vitrine Digital)
-Visão do Cliente: Interface limpa e otimizada para dispositivos móveis, permitindo que o cliente visualize apenas o que está disponível em tempo real.
+# 3. Gestão de Equipe & Frota
+Ficha cadastral robusta para o gerenciamento de entregadores.
 
-Segmentação Automática: O sistema organiza a vitrine automaticamente, exibindo apenas categorias que possuem itens em estoque ou ativos.
+Dados Detalhados: Registro de CPF, CNH, tipo de veículo (Moto, Carro, Bicicleta) e placa.
 
-⚙️ Configurações de Negócio
-Perfil do Estabelecimento: Customização de horários de abertura/fechamento e dias de funcionamento.
+Controle de Acesso: Operadores podem gerenciar a frota, mas são protegidos contra auto-exclusão.
 
-Personalização Visual: Suporte a fotos de capa e identidade visual flexível para diferentes tipos de empresas.
+# 4. Histórico & Auditoria
+Transparência total sobre a operação passada.
 
-💻 Tecnologias Utilizadas
-O projeto utiliza uma stack moderna focada em escalabilidade e performance:
+Busca Geral: Filtro inteligente por ID, Cliente, Bairro, Loja ou Motoboy.
 
-Core: Python 3.14+ e Django 6.0.
+Timeline Detalhada: Registro exato dos horários de criação, despacho e entrega final.
 
-Banco de Dados: PostgreSQL (Hospedado via Supabase).
+Responsabilidade: Identificação clara de qual operador despachou e qual motoboy entregou cada pedido.
 
-Frontend: Bootstrap 5.3 com suporte nativo a Dark/Light Mode.
+# 🛠️ Tecnologias Utilizadas
+Backend: Python 3.14+ / Django 6.0+
 
-Gráficos: Chart.js (Integração JSON via Django).
+Frontend: HTML5, CSS3 (Bootstrap 5), JavaScript (ES6+)
 
-Iconografia: Bootstrap Icons.
+Banco de Dados: SQLite (Desenvolvimento) / PostgreSQL (Sugerido para Produção)
 
-🚀 Como Rodar o Projeto
-Clone o repositório:
+Gráficos: Chart.js
+
+Ícones: Bootstrap Icons
+
+Comunicação: AJAX / Fetch API para atualizações assíncronas
+
+📸 Interface
+O sistema conta com um design moderno em Dark Mode automático (baseado no horário ou preferência do usuário), garantindo conforto visual para operadores que trabalham em turnos noturnos.
+
+⚙️ Instalação e Execução
+Clonar o repositório:
 
 Bash
-git clone https://github.com/marcus-balbino/sid-projeto.git
-Configure o ambiente:
-Crie sua virtualenv e instale os pacotes necessários:
+git clone https://github.com/seu-usuario/sid.git
+Instalar dependências:
 
 Bash
 pip install -r requirements.txt
-Sincronize o Banco de Dados:
+Aplicar migrações:
 
 Bash
+python manage.py makemigrations
 python manage.py migrate
-Inicie o Sistema:
+Iniciar o servidor:
 
 Bash
-python manage.py runserver 8080
+python manage.py runserver
 👤 Autor
-Desenvolvido por Marcus Vinicius Guimarães Balbino como parte de sua trajetória em Ciência da Computação na UFT.
+Desenvolvido por Marcus Vinicius Guimarães Balbino.
+Estudante de Ciência da Computação na Universidade Federal do Tocantins (UFT).
+
+SID - MVB Desenvolvimento V.0.01 Beta
