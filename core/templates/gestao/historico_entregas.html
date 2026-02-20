@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
+        <h2 class="text-white fw-bold"><i class="bi bi-clock-history text-info"></i> Histórico de Entregas</h2>
+        <div>
+            <a href="{% url 'painel_entregas' %}" class="btn btn-outline-light rounded-pill fw-bold">
+                <i class="bi bi-arrow-left"></i> Voltar ao Despacho
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-8 mx-auto">
+            <form method="GET" action="{% url 'historico_entregas' %}" id="formBusca">
+                <div class="input-group input-group-lg shadow-sm">
+                    <span class="input-group-text bg-dark border-secondary text-muted">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="q" class="form-control bg-dark text-white border-secondary" 
+                           placeholder="Buscar por ID, Cliente, Bairro, Loja ou Motoboy..." 
+                           value="{{ query|default:'' }}" id="inputBusca">
+                    <button class="btn btn-primary fw-bold px-4" type="submit">PESQUISAR</button>
+                    {% if query %}
+                        <a href="{% url 'historico_entregas' %}" class="btn btn-outline-secondary d-flex align-items-center">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="area-historico">
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card bg-success bg-opacity-10 border-success border-opacity-25 shadow-sm">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="bg-success text-white rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 50px; height: 50px;">
+                            <i class="bi bi-check2-all fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-success fw-bold mb-0">{% if query %}Encontrados{% else %}Total Entregue{% endif %}</h6>
+                            <h3 class="text-white fw-bold mb-0">{{ pedidos|length }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-dark border-secondary shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0 align-middle">
+                        <thead class="border-secondary table-active">
+                            <tr>
+                                <th class="ps-4 text-muted text-uppercase small fw-bold"># Pedido</th>
+                                <th class="text-muted text-uppercase small fw-bold">Origem (Loja)</th>
+                                <th class="text-muted text-uppercase small fw-bold">Destino (Cliente)</th>
+                                <th class="text-muted text-uppercase small fw-bold">Equipe (Operador / Motoboy)</th>
+                                <th class="text-muted text-uppercase small fw-bold">Timeline (Horários)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in pedidos %}
+                            <tr>
+                                <td class="ps-4 fw-bold text-warning fs-5">#{{ p.id }}</td>
+                                <td>
+                                    <span class="fw-bold text-white"><i class="bi bi-shop text-muted me-1"></i> {{ p.loja.perfil.nome_empresa|default:p.loja.username }}</span>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-light">{{ p.nome_cliente }}</div>
+                                    <div class="small text-muted"><i class="bi bi-geo-alt"></i> {{ p.bairro }}</div>
+                                </td>
+                                <td>
+                                    <div class="mb-2">
+                                        <span class="small text-muted d-block" style="font-size: 0.75rem;">Despachado por:</span>
+                                        <span class="badge bg-black border border-secondary text-info px-2 py-1">
+                                            <i class="bi bi-headset"></i> 
+                                            {% if p.operador_despacho %}
+                                                {{ p.operador_despacho.first_name|default:p.operador_despacho.username }}
+                                            {% else %}
+                                                Sistema
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span class="small text-muted d-block" style="font-size: 0.75rem;">Entregue por:</span>
+                                        {% if p.entregador_responsavel %}
+                                            <span class="badge bg-secondary border border-secondary text-light px-2 py-1">
+                                                <i class="bi bi-motorcycle text-warning"></i> {{ p.entregador_responsavel.first_name|default:p.entregador_responsavel.username }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted small">Não registrado</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column gap-1">
+                                        <div class="small text-light">
+                                            <i class="bi bi-receipt text-secondary"></i> Feito: <strong>{{ p.data_criacao|date:"H:i" }}</strong>
+                                        </div>
+                                        <div class="small text-warning">
+                                            <i class="bi bi-box-seam"></i> Saiu: <strong>{{ p.data_saida_entrega|date:"H:i"|default:"-" }}</strong>
+                                        </div>
+                                        <div class="small text-success">
+                                            <i class="bi bi-check2-all"></i> Fim: <strong>{{ p.data_entregue|date:"H:i"|default:"-" }}</strong>
+                                        </div>
+                                        <div class="text-muted small mt-1" style="font-size: 0.75rem;">
+                                            Data: {{ p.data_criacao|date:"d/m/Y" }}
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <i class="bi bi-search fs-1 d-block mb-3 opacity-50"></i>
+                                    <h5 class="fw-bold">Nenhum resultado encontrado.</h5>
+                                    <p class="small">Tente buscar por outro termo ou limpe a busca.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        async function sincronizarHistorico() {
+            // Se o usuário estiver digitando, não atualizamos para não perder o foco
+            if (document.activeElement === document.getElementById('inputBusca')) return;
+
+            try {
+                // Mantém o termo de busca na URL ao sincronizar
+                const url = new URL(window.location.href);
+                const response = await fetch(url.href, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                
+                if (!response.ok) return;
+                
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                const areaAtual = document.getElementById('area-historico');
+                const novaArea = doc.getElementById('area-historico');
+
+                if (areaAtual && novaArea) {
+                    areaAtual.innerHTML = novaArea.innerHTML;
+                }
+            } catch (error) {
+                console.error("Erro ao sincronizar histórico:", error);
+            }
+        }
+
+        setInterval(sincronizarHistorico, 10000);
+    });
+</script>
+{% endblock %}

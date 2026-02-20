@@ -12,6 +12,12 @@
         box-shadow: none;
         border-color: rgba(255, 255, 255, 0.2);
     }
+    .pulse { animation: pulse-red 2s infinite; }
+    @keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
 </style>
 
 <div class="container-fluid mt-4">
@@ -146,7 +152,8 @@
                                     <th class="ps-4">Pedido</th>
                                     <th>Horário</th>
                                     <th>Cliente</th>
-                                    <th>Status da Cozinha</th>
+                                    <th>Cozinha</th>
+                                    <th>Logística / Entrega</th>
                                     <th>Valor</th>
                                     <th class="text-center">Ações</th>
                                 </tr>
@@ -168,6 +175,21 @@
                                             {% else %}bg-secondary{% endif %}">
                                             {{ p.get_status_pedido_display|default:"Pendente" }}
                                         </span>
+                                    </td>
+                                    <td>
+                                        {% if p.solicitar_entrega %}
+                                            {% if p.status_entrega == 'AGUARDANDO' %}
+                                                <span class="badge bg-danger pulse"><i class="bi bi-hourglass-split"></i> Aguardando Entregador</span>
+                                            {% elif p.status_entrega == 'EM_ROTA' %}
+                                                <span class="badge bg-primary"><i class="bi bi-truck"></i> Saiu p/ Entrega</span>
+                                            {% elif p.status_entrega == 'ENTREGUE' %}
+                                                <span class="badge bg-success"><i class="bi bi-check2-all"></i> Entregue</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Solicitado</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge border border-secondary text-secondary">Sem entrega</span>
+                                        {% endif %}
                                     </td>
                                     <td class="text-success fw-bold">R$ {{ p.valor_total|floatformat:2 }}</td>
                                     <td class="text-center">
@@ -194,7 +216,13 @@
                                                             <p class="mb-2"><strong>Nome:</strong> {{ p.nome_cliente|default:"-" }}</p>
                                                             <p class="mb-2"><strong>WhatsApp:</strong> {{ p.telefone|default:"-" }}</p>
                                                             <p class="mb-2"><strong>Endereço:</strong> {{ p.rua|default:"Retirada no balcão" }} {% if p.numero %}, {{ p.numero }}{% endif %}</p>
-                                                            {% if p.bairro %}<p class="mb-0"><strong>Bairro:</strong> {{ p.bairro }}</p>{% endif %}
+                                                            {% if p.bairro %}<p class="mb-2"><strong>Bairro:</strong> {{ p.bairro }}</p>{% endif %}
+                                                            
+                                                            {% if p.entregador_responsavel %}
+                                                                <p class="mb-0 mt-2 text-info border-top border-secondary pt-2">
+                                                                    <strong><i class="bi bi-person-badge"></i> Entregador:</strong> {{ p.entregador_responsavel.first_name|default:p.entregador_responsavel.username }}
+                                                                </p>
+                                                            {% endif %}
                                                         </div>
 
                                                         <h6 class="text-warning fw-bold mb-3"><i class="bi bi-wallet2 me-2"></i>Pagamento</h6>
@@ -236,23 +264,35 @@
                                                             </button>
                                                         {% endif %}
 
-                                                        {% if p.status_pedido != 'CANCELADO' %}
-                                                            <button type="submit" name="novo_status" value="CANCELADO" class="btn btn-outline-danger fw-bold rounded-pill" onclick="return confirm('Tem certeza que deseja cancelar?');">
-                                                                <i class="bi bi-x-circle"></i> Cancelar
-                                                            </button>
-                                                        {% endif %}
+                                                        {% if p.status_pedido != 'CANCELADO' and p.status_entrega != 'ENTREGUE' %}
+    <button type="submit" name="novo_status" value="CANCELADO" class="btn btn-outline-danger fw-bold rounded-pill" onclick="return confirm('Tem certeza que deseja cancelar?');">
+        <i class="bi bi-x-circle"></i> Cancelar
+    </button>
+{% endif %}
                                                     </form>
                                                 </div>
 
-                                                <div class="d-flex gap-2">
-                                                    {% if not p.solicitar_entrega and p.status_pedido != 'CANCELADO' %}
-                                                        <a href="{% url 'solicitar_entrega_loja' p.id %}" class="btn btn-info fw-bold rounded-pill text-dark">
-                                                            <i class="bi bi-bicycle"></i> Entregador
-                                                        </a>
-                                                    {% elif p.solicitar_entrega %}
-                                                        <span class="btn btn-secondary fw-bold rounded-pill disabled">
-                                                            <i class="bi bi-bicycle"></i> Chamado
-                                                        </span>
+                                                <div class="d-flex flex-wrap gap-2 justify-content-end">
+                                                    {% if p.status_pedido != 'CANCELADO' %}
+                                                        {% if not p.solicitar_entrega %}
+                                                            <a href="{% url 'solicitar_entrega_loja' p.id %}" class="btn btn-info fw-bold rounded-pill text-dark">
+                                                                <i class="bi bi-bicycle"></i> Chamar Entregador
+                                                            </a>
+                                                        {% else %}
+                                                            {% if p.status_entrega == 'AGUARDANDO' %}
+                                                                <span class="btn btn-danger fw-bold rounded-pill disabled opacity-100">
+                                                                    <i class="bi bi-hourglass-split"></i> Aguardando Entregador
+                                                                </span>
+                                                            {% elif p.status_entrega == 'EM_ROTA' %}
+                                                                <span class="btn btn-primary fw-bold rounded-pill disabled opacity-100">
+                                                                    <i class="bi bi-truck"></i> Saiu p/ Entrega
+                                                                </span>
+                                                            {% elif p.status_entrega == 'ENTREGUE' %}
+                                                                <span class="btn btn-success fw-bold rounded-pill disabled opacity-100">
+                                                                    <i class="bi bi-check2-all"></i> Pedido Entregue
+                                                                </span>
+                                                            {% endif %}
+                                                        {% endif %}
                                                     {% endif %}
                                                     
                                                     {% if p.telefone %}
@@ -268,7 +308,7 @@
                                 </div>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="6" class="text-center py-5 text-secondary">
+                                    <td colspan="7" class="text-center py-5 text-secondary">
                                         <i class="bi bi-inbox fs-1 d-block mb-3"></i>
                                         Nenhum pedido recebido ainda.
                                     </td>
@@ -430,7 +470,8 @@
                 }
             });
         }
-</script><script>
+</script>
+<script>
     // ---- MOTOR DE SINCRONIZAÇÃO EM TEMPO REAL ----
     document.addEventListener("DOMContentLoaded", function() {
         
@@ -459,17 +500,10 @@
                 document.getElementById('secao-pedidos').innerHTML = doc.getElementById('secao-pedidos').innerHTML;
 
                 // 5. ALERTA SONORO DE NOVO PEDIDO NA COZINHA!
-                const novoTotalPedidos = parseInt(doc.getElementById('contador-pedidos-api').innerText) || 0;
-                
-                if (novoTotalPedidos > totalPedidosAtual) {
-                    // Toca o som de campainha de restaurante
-                    const campainha = new Audio('https://actions.google.com/sounds/v1/alarms/ding_ding_ding.ogg');
-                    campainha.volume = 0.5; // Volume a 50%
-                    campainha.play();
-                    
-                    // Atualiza o contador de referência
-                    totalPedidosAtual = novoTotalPedidos;
-                }
+                const novoTotalPedidos = parseInt(doc.getElementById('contador-pedidos-api')?.innerText) || 0;
+if (novoTotalPedidos > totalPedidosAtual) {
+    totalPedidosAtual = novoTotalPedidos;
+}
 
             } catch (error) {
                 console.error("Erro na API de Tempo Real:", error);
@@ -480,6 +514,129 @@
         setInterval(sincronizarDashboard, 10000);
     });
 </script>
+<script>
+    // ---- MOTOR DE SINCRONIZAÇÃO EM TEMPO REAL E AÇÕES SEM RELOAD ----
+    document.addEventListener("DOMContentLoaded", function() {
+        
+        let totalPedidosAtual = parseInt(document.getElementById('contador-pedidos-api')?.innerText) || 0;
 
+        // 1. Modificamos a função para aceitar um parâmetro 'forcar_atualizacao'
+        async function sincronizarDashboard(forcar_atualizacao = false) {
+            
+            // Se o modal estiver aberto, ele não atualiza sozinho (para não fechar na cara do lojista), 
+            // a menos que a gente force a atualização após clicar num botão.
+            if (!forcar_atualizacao && document.querySelector('.modal.show')) return;
 
+            try {
+                const response = await fetch(window.location.href, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const html = await response.text();
+
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                // Atualiza as seções vitais
+                document.getElementById('secao-cards').innerHTML = doc.getElementById('secao-cards').innerHTML;
+                document.getElementById('secao-faturamento').innerHTML = doc.getElementById('secao-faturamento').innerHTML;
+                document.getElementById('secao-pedidos').innerHTML = doc.getElementById('secao-pedidos').innerHTML;
+
+                // Alerta sonoro de novo pedido
+                const novoTotalPedidos = parseInt(doc.getElementById('contador-pedidos-api')?.innerText) || 0;
+                if (novoTotalPedidos > totalPedidosAtual) {
+                    const campainha = new Audio('https://actions.google.com/sounds/v1/alarms/ding_ding_ding.ogg');
+                    campainha.volume = 0.5;
+                    campainha.play();
+                    totalPedidosAtual = novoTotalPedidos;
+                }
+
+            } catch (error) {
+                console.error("Erro na API de Tempo Real:", error);
+            }
+        }
+
+        // Continua rodando a cada 10 segundos
+        setInterval(() => sincronizarDashboard(false), 10000);
+
+        // =========================================================================
+        // 2. INTERCEPTAR CLIQUES DOS BOTÕES DE STATUS (SEM RECARREGAR A PÁGINA)
+        // =========================================================================
+        document.body.addEventListener('submit', async function(e) {
+            // Se o formulário enviado for o de "Mudar Status do Pedido"...
+            if (e.target && e.target.action && e.target.action.includes('mudar_status_pedido')) {
+                e.preventDefault(); // Trava o recarregamento da tela!
+
+                const form = e.target;
+                const formData = new FormData(form);
+
+                // Captura qual botão exato foi clicado (Preparando, Pronto ou Cancelar)
+                if (e.submitter && e.submitter.name) {
+                    formData.append(e.submitter.name, e.submitter.value);
+                }
+
+                try {
+                    // Manda a informação para o Django em segundo plano
+                    await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    // Esconde o modal suavemente
+                    const modalNode = form.closest('.modal');
+                    if (modalNode) {
+                        const modalInstance = bootstrap.Modal.getInstance(modalNode);
+                        if (modalInstance) modalInstance.hide();
+                    }
+
+                    // Limpa o fundo preto do modal e força a atualização imediata da tabela
+                    setTimeout(() => {
+                        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                        document.body.classList.remove('modal-open');
+                        document.body.style = '';
+                        
+                        sincronizarDashboard(true); // Atualiza os dados IMEDIATAMENTE!
+                    }, 300); // 300ms é o tempo da animação do Bootstrap fechar o modal
+
+                } catch (err) {
+                    console.error("Erro ao mudar status do pedido", err);
+                }
+            }
+        });
+
+        // =========================================================================
+        // 3. FAZER O MESMO PARA O BOTÃO "CHAMAR ENTREGADOR"
+        // =========================================================================
+        document.body.addEventListener('click', async function(e) {
+            // Verifica se clicou no botão (link) de solicitar entrega
+            const btnEntregador = e.target.closest('a[href*="solicitar_entrega_loja"]');
+            
+            if (btnEntregador) {
+                e.preventDefault(); // Trava o recarregamento
+                
+                try {
+                    await fetch(btnEntregador.href, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    
+                    const modalNode = btnEntregador.closest('.modal');
+                    if (modalNode) {
+                        const modalInstance = bootstrap.Modal.getInstance(modalNode);
+                        if (modalInstance) modalInstance.hide();
+                    }
+
+                    setTimeout(() => {
+                        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                        document.body.classList.remove('modal-open');
+                        document.body.style = '';
+                        sincronizarDashboard(true); // Atualiza IMEDIATAMENTE
+                    }, 300);
+
+                } catch (err) {
+                    console.error("Erro ao chamar entregador", err);
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

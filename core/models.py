@@ -13,73 +13,57 @@ class Perfil(models.Model):
         ('ENTREGADORA', 'Empresa de Entrega'),
     ]
     
-    # Campo para o ID automático (Ex: SID001)
     codigo_identificador = models.CharField(max_length=20, unique=True, blank=True, null=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil')
     tipo_usuario = models.CharField(max_length=20, choices=TIPOS_USUARIO, default='LOJISTA')
     
-    # Informações da Empresa
     nome_empresa = models.CharField(max_length=100, blank=True, null=True,unique=True, help_text="Nome da Loja ou Transportadora")
     telefone_contato = models.CharField(max_length=20, blank=True, null=True)
     ativo = models.BooleanField(default=True, verbose_name="Conta Ativa?")
+
+    # ==========================================
+    # NOVOS CAMPOS: FICHA CADASTRAL DO MOTOBOY
+    # ==========================================
+    cpf = models.CharField(max_length=14, blank=True, null=True, verbose_name="CPF")
+    cnh = models.CharField(max_length=20, blank=True, null=True, verbose_name="CNH")
+    veiculo = models.CharField(max_length=50, blank=True, null=True, verbose_name="Tipo de Veículo")
+    placa_veiculo = models.CharField(max_length=10, blank=True, null=True, verbose_name="Placa do Veículo")
 
     def __str__(self):
         return f"{self.user.username} - {self.get_tipo_usuario_display()}"
     
     def save(self, *args, **kwargs):
-        """
-        Lógica corrigida: usa o ID real do banco para gerar o código SID único.
-        """
         is_new = self._state.adding
         super().save(*args, **kwargs)
         
-        # Gera o código apenas se for uma nova conta e ainda não tiver um
         if is_new and not self.codigo_identificador:
             self.codigo_identificador = f"SID{self.id:03d}"
-            # Salva apenas o campo de identificação para evitar loops
             super().save(update_fields=['codigo_identificador'])
-
-# Signals consolidados para evitar erros de integridade no cadastro
-@receiver(post_save, sender=User)
-def gerenciar_perfil_usuario(sender, instance, created, **kwargs):
-    if created:
-        Perfil.objects.create(user=instance)
-    else:
-        if hasattr(instance, 'perfil'):
-            instance.perfil.save()
-
 
 # ==============================================================================
 # 2. CATEGORIAS E CONFIGURAÇÕES
 # ==============================================================================
 class Categoria(models.Model):
     nome = models.CharField(max_length=50, verbose_name="Nome da Categoria")
-    # Cada loja tem suas próprias categorias para não misturar
     loja = models.ForeignKey(User, on_delete=models.CASCADE, related_name='minhas_categorias', null=True)
     
     class Meta:
         verbose_name = "Categoria"
         verbose_name_plural = "Categorias"
-        # Impede nomes iguais de categorias apenas para a mesma loja
         unique_together = ('nome', 'loja')
 
     def __str__(self):
         return f"{self.nome} ({self.loja.username if self.loja else 'Global'})"
 
 class Configuracao(models.Model):
-    # Vincula as configurações (horário, metas) diretamente ao dono da loja
     loja = models.OneToOneField(User, on_delete=models.CASCADE, related_name='configuracao', null=True)
     nome_empresa = models.CharField(max_length=100, default="Minha Empresa")
     foto_capa = models.ImageField(upload_to='config/', null=True, blank=True)
-    visualizacoes_cardapio = models.IntegerField(default=0)
-    horario_abertura = models.TimeField(default='08:00')
-    horario_fechamento = models.TimeField(default='18:00')
-    meta_diaria = models.DecimalField(max_digits=10, decimal_places=2, default=1000.00)
     meta_diaria = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     visualizacoes_cardapio = models.PositiveIntegerField(default=0)
     loja_aberta = models.BooleanField(default=True, verbose_name="Loja Aberta Manualmente")
     
-    # Dias de funcionamento
+    # Dias e Horários de funcionamento
     segunda = models.BooleanField(default=True)
     terca = models.BooleanField(default=True)
     quarta = models.BooleanField(default=True)
@@ -105,30 +89,13 @@ class Configuracao(models.Model):
     def __str__(self):
         return self.nome_empresa
 
-# O Signal deve ficar após os modelos para que ele reconheça a 'Configuracao'
-@receiver(post_save, sender=User)
-def gerenciar_perfil_usuario(sender, instance, created, **kwargs):
-    if created:
-        # Cria o Perfil e a Configuração inicial para a nova loja automaticamente
-        Perfil.objects.create(user=instance)
-        Configuracao.objects.create(loja=instance, nome_empresa=instance.username)
-    else:
-        if hasattr(instance, 'perfil'):
-            instance.perfil.save()
-        if hasattr(instance, 'configuracao'):
-            instance.configuracao.save()
-
-
-
 # ==============================================================================
-# 3. ESTOQUE E PRODUTOS (RESTALRADO E SEM DUPLICIDADE)
+# 3. ESTOQUE E PRODUTOS 
 # ==============================================================================
 class Insumo(models.Model):
     UNIDADES = [('kg', 'Quilo'), ('g', 'Grama'), ('un', 'Unidade'), ('l', 'Litro')]
     nome = models.CharField(max_length=100, verbose_name="Nome do Insumo")
     loja = models.ForeignKey(User, on_delete=models.CASCADE, related_name='meus_insumos', null=True)
-    
-    # --- Campos restaurados para evitar o FieldError ---
     quantidade_atual = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Qtd em Estoque")
     unidade_medida = models.CharField(max_length=5, choices=UNIDADES, default='un', verbose_name="Unidade")
     preco_compra = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Preço de Compra")
@@ -139,7 +106,6 @@ class Insumo(models.Model):
         return self.nome
 
 class Produto(models.Model):
-    # Apenas uma definição de Produto
     loja = models.ForeignKey(User, on_delete=models.CASCADE, related_name='meus_produtos', null=True)
     nome = models.CharField(max_length=100)
     descricao = models.TextField(verbose_name="Descrição")
@@ -151,8 +117,6 @@ class Produto(models.Model):
     def __str__(self):
         return self.nome
     
-
-    
 # ==============================================================================
 # 4. PEDIDOS E ENTREGA (LOGÍSTICA)
 # ==============================================================================
@@ -161,10 +125,17 @@ class Pedido(models.Model):
     loja = models.ForeignKey(User, on_delete=models.CASCADE, related_name='meus_pedidos', null=True)
     nome_cliente = models.CharField(max_length=100, null=True, blank=True)
     data_criacao = models.DateTimeField(auto_now_add=True)
+    operador_despacho = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='despachos_realizados', verbose_name="Operador que despachou")
+    data_entregue = models.DateTimeField(null=True, blank=True, verbose_name="Hora que foi entregue")
     finalizado = models.BooleanField(default=False)
     valor_total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    
-    # Endereço
+    data_saida_entrega = models.DateTimeField(null=True, blank=True, verbose_name="Hora que saiu para entrega")
+    sessao_id = models.CharField(max_length=50, null=True, blank=True)
+    loja = models.ForeignKey(User, on_delete=models.CASCADE, related_name='meus_pedidos', null=True)
+    nome_cliente = models.CharField(max_length=100, null=True, blank=True)
+    data_criacao = models.DateTimeField(auto_now_add=True)
+
+
     telefone = models.CharField(max_length=20, null=True, blank=True)
     rua = models.CharField(max_length=255, null=True, blank=True, verbose_name="Rua/Alameda")
     bairro = models.CharField(max_length=100, null=True, blank=True, verbose_name="Bairro")
@@ -173,7 +144,6 @@ class Pedido(models.Model):
     OPCOES_PAGAMENTO = [('credito', 'Cartão de Crédito'), ('debito', 'Cartão de Débito'), ('dinheiro', 'Dinheiro')]
     forma_pagamento = models.CharField(max_length=20, choices=OPCOES_PAGAMENTO, null=True, blank=True)
 
-    # Lógica para Entregadoras
     solicitar_entrega = models.BooleanField(default=False, verbose_name="Solicitar Entregadora?")
     
     STATUS_PEDIDO_CHOICES = [
@@ -182,28 +152,14 @@ class Pedido(models.Model):
         ('PRONTO', 'Pronto para Entrega'),
         ('CANCELADO', 'Cancelado'),
     ]
-    status_pedido = models.CharField(
-        max_length=20, 
-        choices=STATUS_PEDIDO_CHOICES, 
-        default='PENDENTE'
-    )
+    status_pedido = models.CharField(max_length=20, choices=STATUS_PEDIDO_CHOICES, default='PENDENTE')
     
-    # 1. ADICIONE ESTA LISTA AQUI:
     STATUS_ENTREGA = [
         ('AGUARDANDO', 'Aguardando Entregador'),
         ('EM_ROTA', 'Em Rota'),
         ('ENTREGUE', 'Entregue'),
     ]
-    
-    # 2. O seu campo já estava aqui, agora ele vai achar a lista de cima!
-    status_entrega = models.CharField(
-        max_length=20, 
-        choices=STATUS_ENTREGA, 
-        default='AGUARDANDO', 
-        blank=True, 
-        null=True
-    )
-    
+    status_entrega = models.CharField(max_length=20, choices=STATUS_ENTREGA, default='AGUARDANDO', blank=True, null=True)
     entregador_responsavel = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='entregas')
 
     def __str__(self):
@@ -221,3 +177,19 @@ class ItemPedido(models.Model):
         
     def __str__(self):
         return f"{self.quantidade}x {self.produto.nome}"
+    
+# ==============================================================================
+# 5. GESTÃO AUTOMÁTICA DE USUÁRIOS (SINAL ÚNICO)
+# ==============================================================================
+@receiver(post_save, sender=User)
+def gerenciar_dados_usuario(sender, instance, created, **kwargs):
+    if created:
+        # get_or_create garante que NUNCA vai tentar criar dois perfis para a mesma pessoa
+        Perfil.objects.get_or_create(user=instance)
+        Configuracao.objects.get_or_create(loja=instance, defaults={'nome_empresa': instance.username})
+    else:
+        # Salva o perfil e a configuração nas edições posteriores
+        if hasattr(instance, 'perfil'):
+            instance.perfil.save()
+        if hasattr(instance, 'configuracao'):
+            instance.configuracao.save()
