@@ -35,96 +35,31 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalPedido{{ p.id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade" id="modalNovoUsuario" tabindex="-1" aria-labelledby="modalNovoUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog">
         <div class="modal-content bg-dark text-white border-secondary">
-            
-            <div class="modal-header border-secondary border-opacity-25 d-flex justify-content-between">
-                <h5 class="modal-title fw-bold">
-                    <i class="bi bi-receipt me-2"></i>Pedido #{{ p.id }}
-                    <span class="badge ms-2 
-                        {% if p.status_pedido == 'PENDENTE' %}bg-secondary
-                        {% elif p.status_pedido == 'PREPARANDO' %}bg-warning text-dark
-                        {% elif p.status_pedido == 'CANCELADO' %}bg-danger
-                        {% else %}bg-success{% endif %}">
-                        {{ p.get_status_pedido_display|default:"Pendente" }}
-                    </span>
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-
-            <div class="modal-body">
-                <h6 class="text-primary border-bottom border-secondary border-opacity-25 pb-2 mb-3 fw-bold">Dados do Cliente</h6>
-                <div class="mb-3 text-secondary">
-                    <p class="mb-1 text-white"><strong><i class="bi bi-person me-1"></i></strong> {{ p.nome_cliente|default:"Não informado" }}</p>
-                    <p class="mb-1 text-white"><strong><i class="bi bi-whatsapp me-1"></i></strong> {{ p.telefone|default:"Sem telefone" }}</p>
-                    <p class="mb-1"><strong><i class="bi bi-geo-alt me-1"></i></strong> {{ p.rua|default:"Retirada no balcão" }}{% if p.numero %}, {{ p.numero }}{% endif %}</p>
-                    {% if p.bairro %}<p class="mb-1 ps-4">{{ p.bairro }}</p>{% endif %}
+            <form action="{% url 'admin_criar_usuario' %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Cadastrar Nova Conta</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-
-                <h6 class="text-primary border-bottom border-secondary border-opacity-25 pb-2 mb-3 fw-bold">Itens do Pedido</h6>
-                <ul class="list-group list-group-flush mb-3 rounded">
-                    {% for item in p.itens.all %}
-                    <li class="list-group-item bg-secondary bg-opacity-10 text-white border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
-                        <div>
-                            <span class="badge bg-primary rounded-pill me-2">{{ item.quantidade }}x</span>
-                            {{ item.produto.nome }}
+                <div class="modal-body">
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">{{ field.label|upper }}</label>
+                            {{ field }}
                         </div>
-                        <span class="text-success">R$ {{ item.subtotal|floatformat:2 }}</span>
-                    </li>
                     {% endfor %}
-                </ul>
-
-                <div class="d-flex justify-content-between align-items-center bg-black bg-opacity-25 p-3 rounded border border-secondary border-opacity-25">
-                    <div>
-                        <span class="d-block text-uppercase small text-secondary">Forma de Pagamento</span>
-                        <strong class="text-info"><i class="bi bi-credit-card me-1"></i>{{ p.get_forma_pagamento_display|default:"No balcão" }}</strong>
-                    </div>
-                    <div class="text-end">
-                        <span class="d-block text-uppercase small text-secondary">Total a Pagar</span>
-                        <h4 class="mb-0 text-success fw-bold">R$ {{ p.valor_total|floatformat:2 }}</h4>
-                    </div>
                 </div>
-            </div>
-
-            <div class="modal-footer border-secondary border-opacity-25 d-flex justify-content-between flex-wrap">
-                <div class="d-flex gap-2 mb-2 mb-md-0">
-                    <form action="{% url 'mudar_status_pedido' p.id %}" method="POST" class="m-0 p-0">
-                        {% csrf_token %}
-                        {% if p.status_pedido != 'CANCELADO' %}
-                            <button type="submit" name="novo_status" value="PREPARANDO" class="btn btn-sm btn-warning fw-bold rounded-pill">
-                                <i class="bi bi-fire"></i> Aceitar
-                            </button>
-                            <button type="submit" name="novo_status" value="CANCELADO" class="btn btn-sm btn-danger fw-bold rounded-pill" onclick="return confirm('Tem certeza que deseja cancelar este pedido?');">
-                                <i class="bi bi-x-circle"></i> Cancelar
-                            </button>
-                        {% endif %}
-                    </form>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Criar Conta</button>
                 </div>
-                
-                <div class="d-flex gap-2">
-                    {% if not p.solicitar_entrega and p.status_pedido != 'CANCELADO' %}
-                    <a href="{% url 'solicitar_entrega_loja' p.id %}" class="btn btn-sm btn-info fw-bold rounded-pill">
-                        <i class="bi bi-bicycle"></i> Entregador
-                    </a>
-                    {% endif %}
-                    
-                    {% if p.telefone %}
-                    <a href="https://wa.me/55{{ p.telefone|urlencode }}" target="_blank" class="btn btn-sm btn-success fw-bold rounded-pill" title="Falar no WhatsApp">
-                        <i class="bi bi-whatsapp"></i>
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-
+            </form>
         </div>
     </div>
 </div>
-
-
-
-
-
 <div class="alert alert-info py-2" style="font-size: 0.85rem;">
     <h6 class="alert-heading fw-bold mb-1"><i class="bi bi-info-circle"></i> Requisitos para Cadastro:</h6>
     <ul class="mb-0 ps-3">

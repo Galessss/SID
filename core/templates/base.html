@@ -99,8 +99,18 @@
 
                             {% elif user.perfil.tipo_usuario == 'ENTREGADORA' %}
                                 <li class="nav-item">
-                                    <a class="nav-link active" href="{% url 'painel_entregas' %}">
+                                    <a class="nav-link" href="{% url 'painel_entregas' %}">
                                         <i class="bi bi-truck text-warning me-2"></i> Minhas Entregas
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'equipe_entregadores' %}">
+                                        <i class="bi bi-people-fill text-info me-2"></i> Minha Equipa
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'historico_entregas' %}">
+                                        <i class="bi bi-clock-history text-info me-2"></i> Histórico
                                     </a>
                                 </li>
 

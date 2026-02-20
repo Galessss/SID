@@ -4,36 +4,68 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="text-white"><i class="bi bi-truck text-warning"></i> Painel de Entregas</h2>
-        <span class="badge bg-secondary">Logado como: {{ user.username }}</span>
+        <div>
+            <a href="{% url 'equipe_entregadores' %}" class="btn btn-warning me-2 rounded-pill fw-bold text-dark">
+                <i class="bi bi-people-fill"></i> Minha Equipa
+            </a>
+            <a href="{% url 'historico_entregas' %}" class="btn btn-outline-info me-2 rounded-pill fw-bold">
+                <i class="bi bi-clock-history"></i> Histórico
+            </a>
+            <span class="badge bg-secondary rounded-pill px-3 py-2 fs-6">Operador: {{ user.username }}</span>
+        </div>
     </div>
 
-    <div class="row">
+    <div class="row" id="area-pedidos">
         {% for p in pedidos %}
         <div class="col-md-6 mb-4">
             <div class="card bg-dark text-white border-secondary shadow h-100">
-                <div class="card-header border-secondary d-flex justify-content-between">
-                    <span class="fw-bold text-warning">Pedido #{{ p.id }}</span>
+                
+                <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="fw-bold text-warning fs-5">Pedido #{{ p.id }}</span>
+                        {% if p.telefone %}
+                            <a href="https://wa.me/55{{ p.telefone }}" target="_blank" class="btn btn-sm btn-success ms-2 rounded-pill px-3">
+                                <i class="bi bi-whatsapp"></i> WhatsApp
+                            </a>
+                        {% endif %}
+                    </div>
                     {% if p.status_entrega == 'AGUARDANDO' %}
-                        <span class="badge bg-danger">Aguardando Coleta</span>
+                        <span class="badge bg-danger pulse">Aguardando Coleta</span>
                     {% elif p.status_entrega == 'EM_ROTA' %}
-                        <span class="badge bg-primary">Em Rota (Com Você)</span>
+                        <span class="badge bg-primary">Em Rota</span>
                     {% endif %}
                 </div>
 
                 <div class="card-body">
+                    {% if p.status_entrega == 'EM_ROTA' and p.data_saida_entrega %}
+                        <div class="alert alert-info py-2 mb-3 text-center border-info">
+                            <i class="bi bi-stopwatch"></i> Saiu para coleta às: <strong class="fs-5">{{ p.data_saida_entrega|date:"H:i" }}</strong>
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-3 border-bottom border-secondary pb-2">
+                        <h6 class="text-muted small fw-bold uppercase"><i class="bi bi-shop"></i> Estabelecimento</h6>
+                        <p class="mb-0 fw-bold text-info fs-5">{{ p.loja.perfil.nome_empresa|default:p.loja.username }}</p>
+                    </div>
+
                     <div class="mb-3">
-                        <h6 class="text-muted small fw-bold">DESTINATÁRIO</h6>
+                        <h6 class="text-muted small fw-bold uppercase">Destinatário</h6>
                         <p class="mb-1 fw-bold fs-5">{{ p.nome_cliente }}</p>
-                        <p class="mb-1"><i class="bi bi-telephone"></i> {{ p.telefone }}</p>
+                        
                         <div class="alert alert-secondary bg-opacity-10 border-secondary p-2 mt-2">
                             <i class="bi bi-geo-alt-fill text-danger"></i> 
                             {{ p.rua }}, Nº {{ p.numero }}<br>
-                            <small class="ms-4">{{ p.bairro }}</small>
+                            <small class="ms-4 text-muted">{{ p.bairro }}</small>
+                            <hr class="my-2 border-secondary">
+                            <a href="https://www.google.com/maps/search/?api=1&query={{ p.rua|urlencode }}+{{ p.numero|urlencode }}+{{ p.bairro|urlencode }}" 
+                               target="_blank" class="btn btn-sm btn-outline-light w-100">
+                                <i class="bi bi-cursor-fill"></i> Abrir no GPS
+                            </a>
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <h6 class="text-muted small fw-bold">ITENS</h6>
+                        <h6 class="text-muted small fw-bold uppercase">Itens do Pedido</h6>
                         <ul class="list-unstyled">
                             {% for item in p.itens.all %}
                                 <li class="small border-bottom border-secondary py-1 d-flex justify-content-between">
@@ -45,26 +77,92 @@
                 </div>
 
                 <div class="card-footer border-secondary bg-transparent">
-                    <div class="d-grid gap-2">
-                        {% if p.status_entrega == 'AGUARDANDO' %}
-                            <a href="{% url 'mudar_status_entrega' p.id 'EM_ROTA' %}" class="btn btn-primary fw-bold">
-                                <i class="bi bi-box-seam"></i> PEGAR PARA ENTREGA
-                            </a>
-                        {% elif p.status_entrega == 'EM_ROTA' %}
-                            <a href="{% url 'mudar_status_entrega' p.id 'ENTREGUE' %}" class="btn btn-success fw-bold">
-                                <i class="bi bi-check-circle-fill"></i> FINALIZAR ENTREGA
-                            </a>
-                        {% endif %}
-                    </div>
+                    {% if p.status_entrega == 'AGUARDANDO' %}
+                        <form method="POST" action="{% url 'mudar_status_entrega' p.id 'EM_ROTA' %}">
+                            {% csrf_token %}
+                            <label class="small text-warning fw-bold mb-1"><i class="bi bi-person-lines-fill"></i> Quem vai entregar?</label>
+                            <select name="entregador_id" class="form-select form-select-sm bg-dark text-white border-secondary mb-3 fs-6 p-2" required>
+                                <option value="">-- Selecione o Entregador --</option>
+                                {% for e in entregadores %}
+                                    <option value="{{ e.id }}" {% if e.id == user.id %}selected{% endif %}>
+                                        {{ e.first_name|default:e.username }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            
+                            <button type="submit" class="btn btn-primary fw-bold w-100 py-2">
+                                <i class="bi bi-box-seam"></i> ACEITAR E INICIAR ROTA
+                            </button>
+                        </form>
+
+                        <form method="POST" action="{% url 'recusar_entrega' p.id %}" class="mt-2">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm fw-bold w-100" onclick="return confirm('Tem certeza que deseja RECUSAR esta entrega?')">
+                                <i class="bi bi-x-circle"></i> RECUSAR ENTREGA
+                            </button>
+                        </form>
+
+                    {% elif p.status_entrega == 'EM_ROTA' %}
+                        <p class="text-center text-muted small mb-2">
+                            Responsável atual: <strong class="text-info">{{ p.entregador_responsavel.first_name|default:p.entregador_responsavel.username }}</strong>
+                        </p>
+                        <form method="POST" action="{% url 'mudar_status_entrega' p.id 'ENTREGUE' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success fw-bold w-100 py-2">
+                                <i class="bi bi-check-circle-fill"></i> CONFIRMAR QUE FOI ENTREGUE
+                            </button>
+                        </form>
+                    {% endif %}
                 </div>
             </div>
         </div>
         {% empty %}
         <div class="col-12 text-center mt-5">
             <i class="bi bi-clipboard-check display-1 text-muted"></i>
-            <h4 class="text-muted mt-3">Tudo entregue! Sem pedidos pendentes.</h4>
+            <h4 class="text-muted mt-3">Não há pedidos para entrega no momento.</h4>
         </div>
         {% endfor %}
     </div>
 </div>
+
+<style>
+    .pulse { animation: pulse-red 2s infinite; }
+    @keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+    .uppercase { text-transform: uppercase; letter-spacing: 1px; }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        async function sincronizarPainel() {
+            try {
+                const response = await fetch(window.location.href, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                
+                if (!response.ok) return;
+                
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                const areaAtual = document.getElementById('area-pedidos');
+                const novaArea = doc.getElementById('area-pedidos');
+
+                if (areaAtual && novaArea) {
+                    areaAtual.innerHTML = novaArea.innerHTML;
+                }
+
+            } catch (error) {
+                console.error("Erro ao sincronizar entregas:", error);
+            }
+        }
+
+        // Atualiza a cada 10 segundos
+        setInterval(sincronizarPainel, 10000);
+    });
+</script>
 {% endblock %}

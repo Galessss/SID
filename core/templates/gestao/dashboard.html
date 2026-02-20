@@ -12,19 +12,38 @@
         box-shadow: none;
         border-color: rgba(255, 255, 255, 0.2);
     }
+    .pulse { animation: pulse-red 2s infinite; }
+    @keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
 </style>
 
 <div class="container-fluid mt-4">
     
-    <div class="row mb-5">
-        <div class="col-12 text-center">
+    <div class="row mb-5 position-relative">
+        
+        <div class="position-absolute top-0 end-0 mt-2 me-2 me-md-4" style="width: auto; z-index: 10;">
+            <div class="card bg-dark border-secondary border-opacity-50 shadow p-2 rounded-pill d-flex flex-row align-items-center gap-2 gap-md-3">
+                <span class="text-secondary small fw-bold ms-2 text-uppercase d-none d-md-inline">Sua Loja está:</span>
+                <div class="form-check form-switch mb-0" style="transform: scale(1.3); margin-top: -2px;">
+                    <input class="form-check-input {% if config.loja_aberta %}bg-success border-success{% else %}bg-danger border-danger{% endif %}" type="checkbox" id="btnToggleLojaDashboard" style="cursor: pointer;" {% if config.loja_aberta %}checked{% endif %}>
+                </div>
+                <span id="labelToggleLojaDashboard" class="fw-bold me-2 {% if config.loja_aberta %}text-success{% else %}text-danger{% endif %}">
+                    {% if config.loja_aberta %}ABERTA{% else %}FECHADA{% endif %}
+                </span>
+            </div>
+        </div>
+
+        <div class="col-12 text-center mt-5 mt-md-0">
             <h1 class="display-5 fw-bold"><i class="bi bi-shop"></i> Painel da Loja</h1>
             <p class="lead text-body-secondary">Gestão de pedidos, faturamento e configurações.</p>
             <hr class="w-25 mx-auto"> 
         </div>
     </div>
 
-    <div class="row g-4 mb-4">
+    <div class="row g-4 mb-4" id="secao-cards">
         <div class="col-md-4">
             <div class="card border-0 shadow-sm h-100" style="background: #157347; border-radius: 20px;">
                 <div class="card-body p-4 position-relative overflow-hidden">
@@ -43,7 +62,7 @@
                 <div class="card-body p-4 position-relative overflow-hidden">
                     <div class="z-1 position-relative">
                         <h6 class="text-white text-uppercase fw-bold opacity-75 small mb-2">Total de Pedidos</h6>
-                        <h2 class="text-white fw-bold mb-3">{{ total_pedidos }}</h2>
+                        <h2 class="text-white fw-bold mb-3" id="contador-pedidos-api">{{ total_pedidos }}</h2>
                         <p class="text-white small opacity-75 mb-0">Pedidos concluídos com sucesso.</p>
                     </div>
                     <i class="bi bi-bag-check position-absolute end-0 bottom-0 mb-3 me-3 opacity-25 text-white" style="font-size: 4rem;"></i>
@@ -119,7 +138,7 @@
         </div>
     </section>
 
-    <section class="row mb-5 mt-5">
+    <section class="row mb-5 mt-5" id="secao-pedidos">
         <div class="col-md-10 mx-auto">
             <div class="card bg-dark shadow-lg border-secondary border-opacity-25" style="border-radius: 15px; overflow: hidden;">
                 <div class="card-header bg-black border-bottom border-secondary border-opacity-25 pt-4 px-4 pb-3 d-flex justify-content-between align-items-center">
@@ -130,9 +149,11 @@
                         <table class="table table-dark table-hover mb-0 align-middle">
                             <thead class="table-active">
                                 <tr>
-                                    <th class="ps-4">Horário</th>
+                                    <th class="ps-4">Pedido</th>
+                                    <th>Horário</th>
                                     <th>Cliente</th>
-                                    <th>Status da Cozinha</th>
+                                    <th>Cozinha</th>
+                                    <th>Logística / Entrega</th>
                                     <th>Valor</th>
                                     <th class="text-center">Ações</th>
                                 </tr>
@@ -140,7 +161,8 @@
                             <tbody>
                                 {% for p in ultimos_pedidos %}
                                 <tr>
-                                    <td class="ps-4 text-secondary">{{ p.data_criacao|date:"H:i (d/m)" }}</td>
+                                    <td class="ps-4 fw-bold text-warning fs-5">#{{ p.id }}</td>
+                                    <td class="text-secondary">{{ p.data_criacao|date:"H:i (d/m)" }}</td>
                                     <td class="fw-bold text-white">
                                         {{ p.nome_cliente|default:"Cliente Avulso" }}
                                     </td>
@@ -153,6 +175,21 @@
                                             {% else %}bg-secondary{% endif %}">
                                             {{ p.get_status_pedido_display|default:"Pendente" }}
                                         </span>
+                                    </td>
+                                    <td>
+                                        {% if p.solicitar_entrega %}
+                                            {% if p.status_entrega == 'AGUARDANDO' %}
+                                                <span class="badge bg-danger pulse"><i class="bi bi-hourglass-split"></i> Aguardando Entregador</span>
+                                            {% elif p.status_entrega == 'EM_ROTA' %}
+                                                <span class="badge bg-primary"><i class="bi bi-truck"></i> Saiu p/ Entrega</span>
+                                            {% elif p.status_entrega == 'ENTREGUE' %}
+                                                <span class="badge bg-success"><i class="bi bi-check2-all"></i> Entregue</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Solicitado</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge border border-secondary text-secondary">Sem entrega</span>
+                                        {% endif %}
                                     </td>
                                     <td class="text-success fw-bold">R$ {{ p.valor_total|floatformat:2 }}</td>
                                     <td class="text-center">
@@ -179,7 +216,13 @@
                                                             <p class="mb-2"><strong>Nome:</strong> {{ p.nome_cliente|default:"-" }}</p>
                                                             <p class="mb-2"><strong>WhatsApp:</strong> {{ p.telefone|default:"-" }}</p>
                                                             <p class="mb-2"><strong>Endereço:</strong> {{ p.rua|default:"Retirada no balcão" }} {% if p.numero %}, {{ p.numero }}{% endif %}</p>
-                                                            {% if p.bairro %}<p class="mb-0"><strong>Bairro:</strong> {{ p.bairro }}</p>{% endif %}
+                                                            {% if p.bairro %}<p class="mb-2"><strong>Bairro:</strong> {{ p.bairro }}</p>{% endif %}
+                                                            
+                                                            {% if p.entregador_responsavel %}
+                                                                <p class="mb-0 mt-2 text-info border-top border-secondary pt-2">
+                                                                    <strong><i class="bi bi-person-badge"></i> Entregador:</strong> {{ p.entregador_responsavel.first_name|default:p.entregador_responsavel.username }}
+                                                                </p>
+                                                            {% endif %}
                                                         </div>
 
                                                         <h6 class="text-warning fw-bold mb-3"><i class="bi bi-wallet2 me-2"></i>Pagamento</h6>
@@ -221,23 +264,35 @@
                                                             </button>
                                                         {% endif %}
 
-                                                        {% if p.status_pedido != 'CANCELADO' %}
-                                                            <button type="submit" name="novo_status" value="CANCELADO" class="btn btn-outline-danger fw-bold rounded-pill" onclick="return confirm('Tem certeza que deseja cancelar?');">
-                                                                <i class="bi bi-x-circle"></i> Cancelar
-                                                            </button>
-                                                        {% endif %}
+                                                        {% if p.status_pedido != 'CANCELADO' and p.status_entrega != 'ENTREGUE' %}
+    <button type="submit" name="novo_status" value="CANCELADO" class="btn btn-outline-danger fw-bold rounded-pill" onclick="return confirm('Tem certeza que deseja cancelar?');">
+        <i class="bi bi-x-circle"></i> Cancelar
+    </button>
+{% endif %}
                                                     </form>
                                                 </div>
 
-                                                <div class="d-flex gap-2">
-                                                    {% if not p.solicitar_entrega and p.status_pedido != 'CANCELADO' %}
-                                                        <a href="{% url 'solicitar_entrega_loja' p.id %}" class="btn btn-info fw-bold rounded-pill text-dark">
-                                                            <i class="bi bi-bicycle"></i> Entregador
-                                                        </a>
-                                                    {% elif p.solicitar_entrega %}
-                                                        <span class="btn btn-secondary fw-bold rounded-pill disabled">
-                                                            <i class="bi bi-bicycle"></i> Chamado
-                                                        </span>
+                                                <div class="d-flex flex-wrap gap-2 justify-content-end">
+                                                    {% if p.status_pedido != 'CANCELADO' %}
+                                                        {% if not p.solicitar_entrega %}
+                                                            <a href="{% url 'solicitar_entrega_loja' p.id %}" class="btn btn-info fw-bold rounded-pill text-dark">
+                                                                <i class="bi bi-bicycle"></i> Chamar Entregador
+                                                            </a>
+                                                        {% else %}
+                                                            {% if p.status_entrega == 'AGUARDANDO' %}
+                                                                <span class="btn btn-danger fw-bold rounded-pill disabled opacity-100">
+                                                                    <i class="bi bi-hourglass-split"></i> Aguardando Entregador
+                                                                </span>
+                                                            {% elif p.status_entrega == 'EM_ROTA' %}
+                                                                <span class="btn btn-primary fw-bold rounded-pill disabled opacity-100">
+                                                                    <i class="bi bi-truck"></i> Saiu p/ Entrega
+                                                                </span>
+                                                            {% elif p.status_entrega == 'ENTREGUE' %}
+                                                                <span class="btn btn-success fw-bold rounded-pill disabled opacity-100">
+                                                                    <i class="bi bi-check2-all"></i> Pedido Entregue
+                                                                </span>
+                                                            {% endif %}
+                                                        {% endif %}
                                                     {% endif %}
                                                     
                                                     {% if p.telefone %}
@@ -253,7 +308,7 @@
                                 </div>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="5" class="text-center py-5 text-secondary">
+                                    <td colspan="7" class="text-center py-5 text-secondary">
                                         <i class="bi bi-inbox fs-1 d-block mb-3"></i>
                                         Nenhum pedido recebido ainda.
                                     </td>
@@ -372,6 +427,216 @@
                 }
             });
         }
+    });
+
+
+    // ---- BOTÃO RÁPIDO: ABRIR E FECHAR LOJA ----
+        const btnToggle = document.getElementById('btnToggleLojaDashboard');
+        const labelToggle = document.getElementById('labelToggleLojaDashboard');
+
+        if(btnToggle) {
+            btnToggle.addEventListener('change', async function() {
+                // Pega o token de segurança do Django (CSRF) que já existe nos formulários da página
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+
+                try {
+                    // Manda a requisição invisível para o Python
+                    const response = await fetch("{% url 'alternar_status_loja' %}", {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': csrfToken
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    // Atualiza as cores e o texto baseado na resposta do Python
+                    if(data.aberta) {
+                        btnToggle.classList.remove('bg-danger', 'border-danger');
+                        btnToggle.classList.add('bg-success', 'border-success');
+                        labelToggle.className = 'fw-bold me-2 text-success';
+                        labelToggle.innerText = 'ABERTA';
+                    } else {
+                        btnToggle.classList.remove('bg-success', 'border-success');
+                        btnToggle.classList.add('bg-danger', 'border-danger');
+                        labelToggle.className = 'fw-bold me-2 text-danger';
+                        labelToggle.innerText = 'FECHADA';
+                    }
+                } catch (error) {
+                    console.error("Erro ao alterar status da loja:", error);
+                    alert("Erro ao alterar o status. Verifique sua conexão.");
+                    btnToggle.checked = !btnToggle.checked; // Desfaz o clique visual se falhar
+                }
+            });
+        }
+</script>
+<script>
+    // ---- MOTOR DE SINCRONIZAÇÃO EM TEMPO REAL ----
+    document.addEventListener("DOMContentLoaded", function() {
+        
+        // Guarda a quantidade de pedidos que a tela tinha quando foi carregada
+        let totalPedidosAtual = parseInt(document.getElementById('contador-pedidos-api').innerText) || 0;
+
+        async function sincronizarDashboard() {
+            // 1. TRAVA DE SEGURANÇA: Se o lojista estiver com um pedido aberto no Modal, 
+            // a tela pausa a atualização para não fechar a janela na cara dele!
+            if (document.querySelector('.modal.show')) return;
+
+            try {
+                // 2. Faz o "Fetch" (Busca Invisível) no servidor para pegar os dados novos
+                const response = await fetch(window.location.href, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const html = await response.text();
+
+                // 3. Cria um "Espelho" da página em memória
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                // 4. Substitui apenas as partes vitais (sem piscar a tela)
+                document.getElementById('secao-cards').innerHTML = doc.getElementById('secao-cards').innerHTML;
+                document.getElementById('secao-faturamento').innerHTML = doc.getElementById('secao-faturamento').innerHTML;
+                document.getElementById('secao-pedidos').innerHTML = doc.getElementById('secao-pedidos').innerHTML;
+
+                // 5. ALERTA SONORO DE NOVO PEDIDO NA COZINHA!
+                const novoTotalPedidos = parseInt(doc.getElementById('contador-pedidos-api')?.innerText) || 0;
+if (novoTotalPedidos > totalPedidosAtual) {
+    totalPedidosAtual = novoTotalPedidos;
+}
+
+            } catch (error) {
+                console.error("Erro na API de Tempo Real:", error);
+            }
+        }
+
+        // Inicia o radar: Vai ao servidor procurar pedidos novos a cada 10 segundos!
+        setInterval(sincronizarDashboard, 10000);
+    });
+</script>
+<script>
+    // ---- MOTOR DE SINCRONIZAÇÃO EM TEMPO REAL E AÇÕES SEM RELOAD ----
+    document.addEventListener("DOMContentLoaded", function() {
+        
+        let totalPedidosAtual = parseInt(document.getElementById('contador-pedidos-api')?.innerText) || 0;
+
+        // 1. Modificamos a função para aceitar um parâmetro 'forcar_atualizacao'
+        async function sincronizarDashboard(forcar_atualizacao = false) {
+            
+            // Se o modal estiver aberto, ele não atualiza sozinho (para não fechar na cara do lojista), 
+            // a menos que a gente force a atualização após clicar num botão.
+            if (!forcar_atualizacao && document.querySelector('.modal.show')) return;
+
+            try {
+                const response = await fetch(window.location.href, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const html = await response.text();
+
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                // Atualiza as seções vitais
+                document.getElementById('secao-cards').innerHTML = doc.getElementById('secao-cards').innerHTML;
+                document.getElementById('secao-faturamento').innerHTML = doc.getElementById('secao-faturamento').innerHTML;
+                document.getElementById('secao-pedidos').innerHTML = doc.getElementById('secao-pedidos').innerHTML;
+
+                // Alerta sonoro de novo pedido
+                const novoTotalPedidos = parseInt(doc.getElementById('contador-pedidos-api')?.innerText) || 0;
+                if (novoTotalPedidos > totalPedidosAtual) {
+                    const campainha = new Audio('https://actions.google.com/sounds/v1/alarms/ding_ding_ding.ogg');
+                    campainha.volume = 0.5;
+                    campainha.play();
+                    totalPedidosAtual = novoTotalPedidos;
+                }
+
+            } catch (error) {
+                console.error("Erro na API de Tempo Real:", error);
+            }
+        }
+
+        // Continua rodando a cada 10 segundos
+        setInterval(() => sincronizarDashboard(false), 10000);
+
+        // =========================================================================
+        // 2. INTERCEPTAR CLIQUES DOS BOTÕES DE STATUS (SEM RECARREGAR A PÁGINA)
+        // =========================================================================
+        document.body.addEventListener('submit', async function(e) {
+            // Se o formulário enviado for o de "Mudar Status do Pedido"...
+            if (e.target && e.target.action && e.target.action.includes('mudar_status_pedido')) {
+                e.preventDefault(); // Trava o recarregamento da tela!
+
+                const form = e.target;
+                const formData = new FormData(form);
+
+                // Captura qual botão exato foi clicado (Preparando, Pronto ou Cancelar)
+                if (e.submitter && e.submitter.name) {
+                    formData.append(e.submitter.name, e.submitter.value);
+                }
+
+                try {
+                    // Manda a informação para o Django em segundo plano
+                    await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    // Esconde o modal suavemente
+                    const modalNode = form.closest('.modal');
+                    if (modalNode) {
+                        const modalInstance = bootstrap.Modal.getInstance(modalNode);
+                        if (modalInstance) modalInstance.hide();
+                    }
+
+                    // Limpa o fundo preto do modal e força a atualização imediata da tabela
+                    setTimeout(() => {
+                        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                        document.body.classList.remove('modal-open');
+                        document.body.style = '';
+                        
+                        sincronizarDashboard(true); // Atualiza os dados IMEDIATAMENTE!
+                    }, 300); // 300ms é o tempo da animação do Bootstrap fechar o modal
+
+                } catch (err) {
+                    console.error("Erro ao mudar status do pedido", err);
+                }
+            }
+        });
+
+        // =========================================================================
+        // 3. FAZER O MESMO PARA O BOTÃO "CHAMAR ENTREGADOR"
+        // =========================================================================
+        document.body.addEventListener('click', async function(e) {
+            // Verifica se clicou no botão (link) de solicitar entrega
+            const btnEntregador = e.target.closest('a[href*="solicitar_entrega_loja"]');
+            
+            if (btnEntregador) {
+                e.preventDefault(); // Trava o recarregamento
+                
+                try {
+                    await fetch(btnEntregador.href, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    
+                    const modalNode = btnEntregador.closest('.modal');
+                    if (modalNode) {
+                        const modalInstance = bootstrap.Modal.getInstance(modalNode);
+                        if (modalInstance) modalInstance.hide();
+                    }
+
+                    setTimeout(() => {
+                        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                        document.body.classList.remove('modal-open');
+                        document.body.style = '';
+                        sincronizarDashboard(true); // Atualiza IMEDIATAMENTE
+                    }, 300);
+
+                } catch (err) {
+                    console.error("Erro ao chamar entregador", err);
+                }
+            }
+        });
     });
 </script>
 {% endblock %}

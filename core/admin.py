@@ -48,7 +48,8 @@ class InsumoAdmin(admin.ModelAdmin):
 
 @admin.register(Configuracao)
 class ConfiguracaoAdmin(admin.ModelAdmin):
-    list_display = ('nome_empresa', 'horario_abertura', 'horario_fechamento')
+    # AQUI ESTÁ A CORREÇÃO: Removemos os horários antigos que causavam o erro
+    list_display = ('nome_empresa', 'meta_diaria', 'loja_aberta')
 
 # Configuração para mostrar os itens dentro do Pedido no Admin
 class ItemPedidoInline(admin.TabularInline):

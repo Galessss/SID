@@ -71,22 +71,23 @@ class InsumoForm(forms.ModelForm):
             'data_validade': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
         }
 
-# =============================================================================
+## =============================================================================
 # 3. FORMULÁRIO DE CONFIGURAÇÃO
 # =============================================================================
 class ConfiguracaoForm(forms.ModelForm):
     class Meta:
         model = Configuracao
+        # Removemos os campos de horário antigos e adicionamos os novos
         fields = [
-            'nome_empresa', 'foto_capa', 'horario_abertura', 'horario_fechamento',
-            'meta_diaria', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'
+            'nome_empresa', 'foto_capa', 'loja_aberta', 'meta_diaria', 
+            'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'
         ]
         widgets = {
-            'horario_abertura': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'horario_fechamento': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
             'meta_diaria': forms.NumberInput(attrs={'class': 'form-control'}),
             'nome_empresa': forms.TextInput(attrs={'class': 'form-control'}),
         }
+
+
 
 # =============================================================================
 # 4. FORMULÁRIO DE NOVO USUÁRIO
