@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0 bg-dark text-white" style="border-radius: 20px;">
+                
+                <div class="card-header border-secondary bg-transparent py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="fw-bold m-0"><i class="bi bi-pencil-square text-primary me-2"></i>Editar Produto</h4>
+                        <a href="{% url 'produtos' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-x-lg"></i> Cancelar
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-7">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-secondary small">NOME</label>
+                                    {{ form.nome }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-secondary small">PREÇO (R$)</label>
+                                    {{ form.preco }}
+                                </div>
+
+                                <div class="mb-3 p-3 rounded border border-secondary border-opacity-25" style="background-color: #2b3035;">
+                                    <label class="form-label fw-bold text-warning small mb-2">
+                                        <i class="bi bi-tag-fill me-1"></i> ALTERAR CATEGORIA
+                                    </label>
+                                    <div class="input-group">
+                                        {{ form.categoria }}
+                                    </div>
+                                    <div class="form-text text-secondary small mt-1">Selecione a nova categoria para este item.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-secondary small">DESCRIÇÃO</label>
+                                    {{ form.descricao }}
+                                </div>
+                            </div>
+
+                            <div class="col-md-5 d-flex flex-column align-items-center">
+                                <label class="form-label fw-bold text-secondary small w-100 text-start">FOTO ATUAL</label>
+                                
+                                <div class="mb-3 position-relative" style="width: 180px; height: 180px;">
+                                    {% if produto.foto %}
+                                        <img src="{{ produto.foto.url }}" class="rounded shadow-sm w-100 h-100 object-fit-cover border border-secondary">
+                                    {% else %}
+                                        <div class="w-100 h-100 bg-secondary bg-opacity-10 rounded d-flex align-items-center justify-content-center border border-secondary">
+                                            <i class="bi bi-image text-muted fs-1"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-4 w-100">
+                                    <label class="form-label fw-bold text-secondary small">TROCAR FOTO</label>
+                                    {{ form.foto }}
+                                </div>
+
+                                <div class="card bg-secondary bg-opacity-10 border-secondary w-100 p-3">
+                                    <div class="form-check form-switch d-flex justify-content-between align-items-center ps-0">
+                                        <label class="form-check-label fw-bold text-light" for="{{ form.ativo.id_for_label }}">Produto Ativo?</label>
+                                        {{ form.ativo }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="border-secondary my-4">
+
+                        <div class="d-grid gap-3">
+                            <button type="submit" class="btn btn-primary btn-lg fw-bold shadow-sm">
+                                <i class="bi bi-save me-2"></i> SALVAR ALTERAÇÕES
+                            </button>
+                            
+                            <button type="button" class="btn btn-outline-danger btn-lg fw-bold" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                <i class="bi bi-trash me-2"></i> EXCLUIR PRODUTO
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold text-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Excluir Produto
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir o produto <strong>{{ produto.nome }}</strong>?</p>
+                <p class="small text-secondary mb-0">Esta ação é irreversível e removerá o item do cardápio.</p>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                
+                <a href="{% url 'deletar_produto' produto.id %}" class="btn btn-danger">
+                    Sim, Excluir Permanentemente
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Estilos Dark Mode para Inputs */
+    .form-control, .form-select, textarea {
+        background-color: #212529 !important;
+        border-color: #495057 !important;
+        color: #fff !important;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #0d6efd !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+    }
+    /* Switch Customizado */
+    .form-check-input:checked {
+        background-color: #198754;
+        border-color: #198754;
+    }
+    input[type="file"]::file-selector-button {
+        background-color: #343a40;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        margin-right: 10px;
+        border-radius: 5px;
+    }
+</style>
+{% endblock %}
