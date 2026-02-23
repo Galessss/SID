@@ -1,0 +1,390 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="display-6 fw-bold"><i class="bi bi-box-seam"></i> Gestão de Produtos</h1>
+            <p class="text-muted">Cadastre, edite e gerencie o cardápio.</p>
+        </div>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar ao Dashboard
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm border-0" style="border-radius: 15px; position: sticky; top: 20px;">
+                <div class="card-header bg-success text-white fw-bold py-3" style="border-radius: 15px 15px 0 0;">
+                    <i class="bi bi-plus-circle-fill me-2"></i> Novo Produto
+                </div>
+                <div class="card-body">
+                 <form method="POST" enctype="multipart/form-data" id="formProduto">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary small">NOME DO PRODUTO</label>
+                        {{ form.nome }} 
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary small">PREÇO (R$)</label>
+                        {{ form.preco }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary small">DESCRIÇÃO</label>
+                        {{ form.descricao }}
+                    </div>
+
+                   <div class="mb-4 p-3 rounded border border-secondary border-opacity-25" style="background-color: #2b3035;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <label class="form-label fw-bold text-light small m-0">CATEGORIA</label>
+                            <button type="button" class="btn btn-sm btn-link text-secondary text-decoration-none p-0" data-bs-toggle="modal" data-bs-target="#modalGerenciarCategorias">
+                                <i class="bi bi-gear-fill me-1"></i> Gerenciar
+                            </button>
+                        </div>
+                        
+                        <div class="d-flex gap-2 mb-3">
+                            <button type="button" class="btn btn-sm btn-success w-50 fw-bold" id="btn-existente" onclick="alternarModoCategoria('existente')">
+                                <i class="bi bi-list-ul me-1"></i> Selecionar
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary w-50 fw-bold text-light" id="btn-nova" onclick="alternarModoCategoria('nova')">
+                                <i class="bi bi-plus-lg me-1"></i> Criar Nova
+                            </button>
+                        </div>
+
+                        <div id="box-categoria-existente">
+                            <div class="input-group">
+                                <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-tag-fill"></i></span>
+                                {{ form.categoria }}
+                            </div>
+                            <div class="form-text text-secondary small mt-1">Escolha uma categoria já cadastrada.</div>
+                        </div>
+
+                        <div id="box-categoria-nova" class="d-none">
+                            <div class="input-group">
+                                <span class="input-group-text bg-dark border-secondary text-success"><i class="bi bi-magic"></i></span>
+                                <input type="text" id="input_nova_categoria_api" class="form-control bg-dark text-white border-secondary" placeholder="Nome da nova categoria">
+                                
+                                <button type="button" class="btn btn-primary fw-bold" onclick="salvarCategoriaAPI()">
+                                    <i class="bi bi-cloud-arrow-up-fill"></i> Salvar
+                                </button>
+                            </div>
+                            <div class="form-text text-secondary small mt-1">Digite e clique em salvar para adicionar à lista.</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary small">FOTO DO PRODUTO</label>
+                        {{ form.foto }}
+                    </div>
+
+                    <div class="d-none">{{ form.ativo }}</div>
+
+                    <button type="submit" class="btn btn-success w-100 py-2 fw-bold shadow-sm">
+                        <i class="bi bi-check-lg me-2"></i> CADASTRAR PRODUTO
+                    </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm" style="border-radius: 20px; overflow: hidden;">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="fw-bold m-0 text-dark">📦 Itens Cadastrados <span class="badge bg-light text-dark ms-2">{{ total_produtos }}</span></h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4 py-3 text-secondary small">FOTO</th>
+                                <th class="py-3 text-secondary small">NOME & CATEGORIA</th>
+                                <th class="py-3 text-secondary small">PREÇO</th>
+                                <th class="text-center py-3 text-secondary small">STATUS</th>
+                                <th class="text-end pe-4 py-3 text-secondary small">AÇÕES</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for produto in lista_produtos %}
+                            <tr class="{% if not produto.ativo %}bg-light opacity-75{% endif %}">
+                                <td class="ps-4">
+                                    <div style="width: 50px; height: 50px;">
+                                        {% if produto.foto %}
+                                            <img src="{{ produto.foto.url }}" class="rounded-circle w-100 h-100 object-fit-cover shadow-sm">
+                                        {% else %}
+                                            <div class="rounded-circle bg-secondary bg-opacity-10 w-100 h-100 d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-image text-muted"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+    <div class="fw-bold" style="color: rgb(69, 130, 191) !important;">
+        {{ produto.nome }}
+    </div>
+    <span class="badge border text-secondary fw-normal">
+        {{ produto.categoria.nome }}
+    </span>
+    </td>
+                                <td class="fw-bold text-success">R$ {{ produto.preco }}</td>
+                                <td class="text-center">
+                                    <div class="form-check form-switch d-flex justify-content-center flex-column align-items-center">
+                                        <input class="form-check-input shadow-none" type="checkbox" role="switch" 
+                                               id="switch-{{ produto.id }}"
+                                               onchange="alternarStatus({{ produto.id }})"
+                                               style="cursor: pointer; width: 40px; height: 20px;"
+                                               {% if produto.ativo %}checked{% endif %}>
+                                        <span id="label-{{ produto.id }}" class="small fw-bold mt-1 {% if produto.ativo %}text-success{% else %}text-muted{% endif %}" style="font-size: 0.65rem;">
+                                            {% if produto.ativo %}ATIVO{% else %}INATIVO{% endif %}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="{% url 'editar_produto' produto.id %}" class="btn btn-sm btn-light text-primary rounded-circle shadow-sm" title="Editar">
+                                        <i class="bi bi-pencil-fill"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" class="text-center py-5 text-muted">Nenhum produto cadastrado.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function salvarCategoriaAPI() {
+        const inputNova = document.getElementById('input_nova_categoria_api');
+        const nomeCategoria = inputNova.value.trim();
+        const selectCategoria = document.getElementById('id_categoria'); 
+
+        if (!nomeCategoria) {
+            alert('Por favor, digite um nome para a categoria.');
+            inputNova.focus();
+            return;
+        }
+
+        // Garante que a URL está correta conforme seu urls.py
+        const url = "{% url 'api_criar_categoria' %}"; 
+        const csrftoken = getCookie('csrftoken');
+
+        const btnSalvar = inputNova.nextElementSibling;
+        const textoOriginal = btnSalvar.innerHTML;
+        btnSalvar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        btnSalvar.disabled = true;
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({ nome: nomeCategoria })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucesso) {
+                const novaOpcao = new Option(data.nome, data.id);
+                selectCategoria.add(novaOpcao);
+                selectCategoria.value = data.id;
+                alternarModoCategoria('existente');
+                inputNova.value = '';
+            } else {
+                alert('Erro: ' + data.erro);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao comunicar com o servidor.');
+        })
+        .finally(() => {
+            btnSalvar.innerHTML = textoOriginal;
+            btnSalvar.disabled = false;
+        });
+    }
+
+    function alternarModoCategoria(modo) {
+        const boxExistente = document.getElementById('box-categoria-existente');
+        const boxNova = document.getElementById('box-categoria-nova');
+        const btnExistente = document.getElementById('btn-existente');
+        const btnNova = document.getElementById('btn-nova');
+        const inputNova = document.getElementById('input_nova_categoria_api');
+
+        if (modo === 'existente') {
+            boxExistente.classList.remove('d-none');
+            boxNova.classList.add('d-none');
+            btnExistente.classList.add('btn-success');
+            btnExistente.classList.remove('btn-outline-secondary', 'text-light');
+            btnNova.classList.add('btn-outline-secondary', 'text-light');
+            btnNova.classList.remove('btn-success');
+        } else {
+            boxExistente.classList.add('d-none');
+            boxNova.classList.remove('d-none');
+            btnNova.classList.add('btn-success');
+            btnNova.classList.remove('btn-outline-secondary', 'text-light');
+            btnExistente.classList.add('btn-outline-secondary', 'text-light');
+            btnExistente.classList.remove('btn-success');
+            if(inputNova) inputNova.focus();
+        }
+    }
+
+    // Função para alternar status do produto (switch)
+    function alternarStatus(id) {
+        const url = `/api/alternar-status/${id}/`;
+        const label = document.getElementById(`label-${id}`);
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'sucesso') {
+                if (data.ativo) {
+                    label.textContent = "ATIVO";
+                    label.classList.remove("text-muted");
+                    label.classList.add("text-success");
+                } else {
+                    label.textContent = "INATIVO";
+                    label.classList.remove("text-success");
+                    label.classList.add("text-muted");
+                }
+            } else {
+                alert('Erro ao alterar status');
+            }
+        });
+    }
+
+
+    // Função para excluir categoria via API
+function excluirCategoria(id, nome) {
+    if (!confirm(`Tem certeza que deseja excluir a categoria "${nome}"?`)) return;
+
+    // URL da API (deve bater com seu urls.py)
+    const url = `/api/excluir-categoria/${id}/`; 
+    const csrftoken = getCookie('csrftoken');
+
+    // Feedback visual (opcional: mudar ícone para loading)
+    const btnRow = document.getElementById(`cat-row-${id}`);
+    btnRow.style.opacity = '0.5';
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'sucesso') {
+            // 1. Remove a linha da lista no Modal
+            if (btnRow) btnRow.remove();
+
+            // 2. Remove a opção do Select Principal (id_categoria) para sincronizar
+            const select = document.getElementById('id_categoria');
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value == id) {
+                    select.remove(i);
+                    break;
+                }
+            }
+            
+            // Feedback simples (opcional)
+            // alert('Categoria excluída.');
+        } else {
+            // Caso tenha erro (ex: tem produtos vinculados)
+            alert('Erro: ' + data.mensagem);
+            btnRow.style.opacity = '1'; // Restaura opacidade
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao comunicar com o servidor.');
+        btnRow.style.opacity = '1';
+    });
+}
+
+
+</script>
+
+<style>
+    .form-control, .form-select {
+        background-color: #212529 !important;
+        border-color: #495057 !important;
+        color: #fff !important;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #198754 !important;
+        box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25) !important;
+    }
+    ::placeholder { 
+        color: #adb5bd !important;
+        opacity: 0.5; 
+    }
+    input[type="file"]::file-selector-button {
+        background-color: #343a40;
+        color: white;
+        border: none;
+    }
+</style>
+
+<div class="modal fade" id="modalGerenciarCategorias" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold"><i class="bi bi-list-check me-2"></i>Gerenciar Categorias</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-secondary small mb-3">Apenas categorias sem produtos podem ser excluídas.</p>
+                
+                <ul class="list-group list-group-flush rounded" id="listaCategoriasModal">
+                    {% for cat in form.fields.categoria.queryset %}
+                    <li class="list-group-item bg-dark text-white border-secondary d-flex justify-content-between align-items-center" id="cat-row-{{ cat.id }}">
+                        <span>{{ cat.nome }}</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger border-0" 
+                                onclick="excluirCategoria({{ cat.id }}, '{{ cat.nome|escapejs }}')">
+                            <i class="bi bi-trash-fill"></i>
+                        </button>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item bg-dark text-muted text-center">Nenhuma categoria encontrada.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %} {% block title %}Login - SID{% endblock %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card shadow-lg p-4 border-0" style="width: 100%; max-width: 400px; border-radius: 20px; background-color: #1e1e1e;">
+        <div class="text-center mb-4">
+            <img src="{% static 'img/pinguim_logo.png' %}" alt="Logo SID" width="100" height="100" class="mb-3 rounded-circle shadow-sm">
+            <h2 class="fw-bold text-white">Bem-vindo ao SID</h2>
+            <p class="text-white-50 small">Faça login para gerenciar o sistema</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+                <div class="alert alert-danger py-2 text-center small border-0">
+                    Usuário ou senha incorretos.
+                </div>
+            {% endif %}
+
+            <div class="mb-3">
+                <label class="form-label fw-bold text-secondary small">USUÁRIO</label>
+                <input type="text" name="username" class="form-control form-control-lg bg-dark text-white border-secondary border-opacity-25" placeholder="Seu usuário" required>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold text-secondary small">SENHA</label>
+                <input type="password" name="password" class="form-control form-control-lg bg-dark text-white border-secondary border-opacity-25" placeholder="Sua senha" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 btn-lg fw-bold rounded-pill shadow-sm">Entrar</button>
+        </form>
+
+        <div class="text-center mt-4">
+            <small class="text-muted opacity-75">Esqueceu a senha? Contate o suporte.</small>
+        </div>
+    </div>
+</div>
+{% endblock %}
