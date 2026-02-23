@@ -1,0 +1,23 @@
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Banco de dados local (SQLite)
+*.sqlite3
+
+# Pasta de arquivos enviados por usuários (imagens de produtos, etc)
+SID/media/
+SID/static/
+
+# Variáveis de ambiente (Onde as chaves REALMENTE devem ficar)
+.env
+
+# Logs
+*.log
+
+# Pastas de ambiente virtual
+venv/
+env/
+.venv/

@@ -13,10 +13,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -78,6 +78,7 @@ WSGI_APPLICATION = 'projeto.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# Apague o DATABASES antigo que tem 'db.sqlite3' e deixe APENAS este:
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -117,14 +118,11 @@ USE_I18N = True
 USE_TZ = True
 
 
+# Mantenha apenas uma definição de STATIC_ROOT
 STATIC_URL = 'static/'
-
-# Como você definiu STATICFILES_DIRS, o Django também buscará na raiz do projeto
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Suas configurações de Media estão corretas
