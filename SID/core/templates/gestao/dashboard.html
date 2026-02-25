@@ -249,59 +249,64 @@
                                                 </div>
                                             </div>
 
-                                            <div class="modal-footer border-secondary border-opacity-25 bg-black d-flex flex-column flex-sm-row justify-content-between gap-2">
-                                                <div class="d-flex gap-2">
-                                                    <form action="{% url 'mudar_status_pedido' p.id %}" method="POST" class="m-0 p-0 d-flex gap-2">
-                                                        {% csrf_token %}
-                                                        
-                                                        {% if p.status_pedido == 'PENDENTE' or not p.status_pedido %}
-                                                            <button type="submit" name="novo_status" value="PREPARANDO" class="btn btn-warning fw-bold rounded-pill">
-                                                                <i class="bi bi-fire"></i> Aceitar Pedido
-                                                            </button>
-                                                        {% elif p.status_pedido == 'PREPARANDO' %}
-                                                            <button type="submit" name="novo_status" value="PRONTO" class="btn btn-success fw-bold rounded-pill">
-                                                                <i class="bi bi-check-circle"></i> Marcar como Pronto
-                                                            </button>
-                                                        {% endif %}
+                                          <div class="modal-footer border-secondary border-opacity-25 bg-black d-flex flex-column flex-sm-row justify-content-between gap-2">
+    <div class="d-flex gap-2">
+        <form action="{% url 'mudar_status_pedido' p.id %}" method="POST" class="m-0 p-0 d-flex gap-2 form-acao-pedido">
+            {% csrf_token %}
+            
+            {% if p.status_pedido == 'PENDENTE' or not p.status_pedido %}
+                <button type="submit" name="novo_status" value="PREPARANDO" class="btn btn-warning fw-bold rounded-pill">
+                    <i class="bi bi-fire"></i> Aceitar Pedido
+                </button>
+            {% elif p.status_pedido == 'PREPARANDO' %}
+                <button type="submit" name="novo_status" value="PRONTO" class="btn btn-success fw-bold rounded-pill">
+                    <i class="bi bi-check-circle"></i> Marcar como Pronto
+                </button>
+            {% endif %}
 
-                                                        {% if p.status_pedido != 'CANCELADO' and p.status_entrega != 'ENTREGUE' %}
-    <button type="submit" name="novo_status" value="CANCELADO" class="btn btn-outline-danger fw-bold rounded-pill" onclick="return confirm('Tem certeza que deseja cancelar?');">
-        <i class="bi bi-x-circle"></i> Cancelar
-    </button>
-{% endif %}
-                                                    </form>
-                                                </div>
+            {% if p.status_pedido != 'CANCELADO' and p.status_entrega != 'ENTREGUE' %}
+                <button type="submit" name="novo_status" value="CANCELADO" class="btn btn-outline-danger fw-bold rounded-pill" onclick="return confirm('Tem certeza que deseja cancelar?');">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+            {% endif %}
+        </form>
+    </div>
 
-                                                <div class="d-flex flex-wrap gap-2 justify-content-end">
-                                                    {% if p.status_pedido != 'CANCELADO' %}
-                                                        {% if not p.solicitar_entrega %}
-                                                            <a href="{% url 'solicitar_entrega_loja' p.id %}" class="btn btn-info fw-bold rounded-pill text-dark">
-                                                                <i class="bi bi-bicycle"></i> Chamar Entregador
-                                                            </a>
-                                                        {% else %}
-                                                            {% if p.status_entrega == 'AGUARDANDO' %}
-                                                                <span class="btn btn-danger fw-bold rounded-pill disabled opacity-100">
-                                                                    <i class="bi bi-hourglass-split"></i> Aguardando Entregador
-                                                                </span>
-                                                            {% elif p.status_entrega == 'EM_ROTA' %}
-                                                                <span class="btn btn-primary fw-bold rounded-pill disabled opacity-100">
-                                                                    <i class="bi bi-truck"></i> Saiu p/ Entrega
-                                                                </span>
-                                                            {% elif p.status_entrega == 'ENTREGUE' %}
-                                                                <span class="btn btn-success fw-bold rounded-pill disabled opacity-100">
-                                                                    <i class="bi bi-check2-all"></i> Pedido Entregue
-                                                                </span>
-                                                            {% endif %}
-                                                        {% endif %}
-                                                    {% endif %}
-                                                    
-                                                    {% if p.telefone %}
-                                                        <a href="https://wa.me/55{{ p.telefone|urlencode }}" target="_blank" class="btn btn-success fw-bold rounded-pill">
-                                                            <i class="bi bi-whatsapp"></i> Falar
-                                                        </a>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
+    <div class="d-flex flex-wrap gap-2 justify-content-end">
+        {% if p.status_pedido != 'CANCELADO' %}
+            {% if not p.solicitar_entrega %}
+                
+                <form action="{% url 'solicitar_entrega_loja' p.id %}" method="POST" class="m-0 p-0 form-acao-pedido">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-info fw-bold rounded-pill text-dark">
+                        <i class="bi bi-bicycle"></i> Chamar Entregador
+                    </button>
+                </form>
+
+            {% else %}
+                {% if p.status_entrega == 'AGUARDANDO' %}
+                    <span class="btn btn-danger fw-bold rounded-pill disabled opacity-100">
+                        <i class="bi bi-hourglass-split"></i> Aguardando Entregador
+                    </span>
+                {% elif p.status_entrega == 'EM_ROTA' %}
+                    <span class="btn btn-primary fw-bold rounded-pill disabled opacity-100">
+                        <i class="bi bi-truck"></i> Saiu p/ Entrega
+                    </span>
+                {% elif p.status_entrega == 'ENTREGUE' %}
+                    <span class="btn btn-success fw-bold rounded-pill disabled opacity-100">
+                        <i class="bi bi-check2-all"></i> Pedido Entregue
+                    </span>
+                {% endif %}
+            {% endif %}
+        {% endif %}
+        
+        {% if p.telefone %}
+            <a href="https://wa.me/55{{ p.telefone|urlencode }}" target="_blank" class="btn btn-success fw-bold rounded-pill">
+                <i class="bi bi-whatsapp"></i> Falar
+            </a>
+        {% endif %}
+    </div>
+</div>
 
                                         </div>
                                     </div>
@@ -354,72 +359,47 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        
+        // ==========================================
+        // 1. GRÁFICOS E PAINEL FINANCEIRO
+        // ==========================================
         function parseDinheiroBr(valorStr) {
             if (!valorStr) return 0;
             return parseFloat(valorStr.replace(/\./g, '').replace(',', '.')) || 0;
         }
 
         const metaDiaria = parseDinheiroBr("{{ meta|default:1000 }}");
-        
         const dadosFinanceiros = {
-            diario: { 
-                valor: parseDinheiroBr("{{ faturamento_hoje|default:0 }}"), 
-                label: "Faturamento Hoje" 
-            },
-            semanal: { 
-                valor: parseDinheiroBr("{{ faturamento_semanal|default:0 }}"), 
-                label: "Últimos 7 dias" 
-            },
-            mensal: { 
-                valor: parseDinheiroBr("{{ faturamento_mensal|default:0 }}"), 
-                label: "Este Mês" 
-            }
+            diario: { valor: parseDinheiroBr("{{ faturamento_hoje|default:0 }}"), label: "Faturamento Hoje" },
+            semanal: { valor: parseDinheiroBr("{{ faturamento_semanal|default:0 }}"), label: "Últimos 7 dias" },
+            mensal: { valor: parseDinheiroBr("{{ faturamento_mensal|default:0 }}"), label: "Este Mês" }
         };
 
         const select = document.getElementById('selectPeriodo');
-        const display = document.getElementById('displayValor');
-        const label = document.getElementById('labelPeriodo');
-        const barra = document.getElementById('barraProgresso');
-        const textoMeta = document.getElementById('textoMeta');
-
-        function atualizarPainel() {
-            const info = dadosFinanceiros[select.value];
-            display.innerText = info.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            label.innerText = info.label;
-
-            let porcentagem = (info.valor / metaDiaria) * 100;
-            let displayPorcentagem = porcentagem.toFixed(1);
-            let widthBarra = porcentagem > 100 ? 100 : porcentagem;
-            
-            barra.style.width = `${widthBarra}%`;
-            textoMeta.innerText = `${displayPorcentagem}% da meta atingida`;
-
-            if (porcentagem >= 100) {
-                barra.classList.replace('bg-primary', 'bg-success');
-            } else {
-                barra.classList.replace('bg-success', 'bg-primary');
-            }
-        }
-
         if (select) {
-            select.addEventListener('change', atualizarPainel);
-            atualizarPainel();
+            select.addEventListener('change', () => {
+                const info = dadosFinanceiros[select.value];
+                document.getElementById('displayValor').innerText = info.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                document.getElementById('labelPeriodo').innerText = info.label;
+
+                let porcentagem = (info.valor / metaDiaria) * 100;
+                let barra = document.getElementById('barraProgresso');
+                barra.style.width = `${Math.min(porcentagem, 100)}%`;
+                document.getElementById('textoMeta').innerText = `${porcentagem.toFixed(1)}% da meta atingida`;
+                barra.className = `progress-bar progress-bar-striped progress-bar-animated ${porcentagem >= 100 ? 'bg-success' : 'bg-primary'}`;
+            });
+            select.dispatchEvent(new Event('change'));
         }
 
         const ctx = document.getElementById('topProdutosChart');
         if (ctx) {
-            const labels = JSON.parse('{{ chart_labels_json|escapejs }}');
-            const datasets = JSON.parse('{{ chart_datasets_json|escapejs }}');
-
             new Chart(ctx, {
                 type: 'line',
-                data: { labels: labels, datasets: datasets },
+                data: { labels: JSON.parse('{{ chart_labels_json|escapejs }}'), datasets: JSON.parse('{{ chart_datasets_json|escapejs }}') },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top', labels: { color: '#B0B0B0', usePointStyle: true } }
-                    },
+                    plugins: { legend: { position: 'top', labels: { color: '#B0B0B0', usePointStyle: true } } },
                     scales: {
                         y: { beginAtZero: true, grid: { color: '#434745' }, ticks: { color: '#B0B0B0' } },
                         x: { grid: { display: false }, ticks: { color: '#B0B0B0' } }
@@ -427,216 +407,147 @@
                 }
             });
         }
-    });
 
-
-    // ---- BOTÃO RÁPIDO: ABRIR E FECHAR LOJA ----
+        // ==========================================
+        // 2. BOTÃO RÁPIDO: ABRIR E FECHAR LOJA
+        // ==========================================
         const btnToggle = document.getElementById('btnToggleLojaDashboard');
-        const labelToggle = document.getElementById('labelToggleLojaDashboard');
-
         if(btnToggle) {
             btnToggle.addEventListener('change', async function() {
-                // Pega o token de segurança do Django (CSRF) que já existe nos formulários da página
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-
                 try {
-                    // Manda a requisição invisível para o Python
                     const response = await fetch("{% url 'alternar_status_loja' %}", {
                         method: 'POST',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRFToken': csrfToken
-                        }
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken }
                     });
-                    
                     const data = await response.json();
+                    const labelToggle = document.getElementById('labelToggleLojaDashboard');
                     
-                    // Atualiza as cores e o texto baseado na resposta do Python
-                    if(data.aberta) {
-                        btnToggle.classList.remove('bg-danger', 'border-danger');
-                        btnToggle.classList.add('bg-success', 'border-success');
-                        labelToggle.className = 'fw-bold me-2 text-success';
-                        labelToggle.innerText = 'ABERTA';
-                    } else {
-                        btnToggle.classList.remove('bg-success', 'border-success');
-                        btnToggle.classList.add('bg-danger', 'border-danger');
-                        labelToggle.className = 'fw-bold me-2 text-danger';
-                        labelToggle.innerText = 'FECHADA';
-                    }
+                    btnToggle.className = `form-check-input ${data.aberta ? 'bg-success border-success' : 'bg-danger border-danger'}`;
+                    labelToggle.className = `fw-bold me-2 text-${data.aberta ? 'success' : 'danger'}`;
+                    labelToggle.innerText = data.aberta ? 'ABERTA' : 'FECHADA';
                 } catch (error) {
-                    console.error("Erro ao alterar status da loja:", error);
-                    alert("Erro ao alterar o status. Verifique sua conexão.");
-                    btnToggle.checked = !btnToggle.checked; // Desfaz o clique visual se falhar
+                    alert("Erro ao alterar o status.");
+                    btnToggle.checked = !btnToggle.checked;
                 }
             });
         }
-</script>
-<script>
-    // ---- MOTOR DE SINCRONIZAÇÃO EM TEMPO REAL ----
-    document.addEventListener("DOMContentLoaded", function() {
-        
-        // Guarda a quantidade de pedidos que a tela tinha quando foi carregada
-        let totalPedidosAtual = parseInt(document.getElementById('contador-pedidos-api').innerText) || 0;
 
-        async function sincronizarDashboard() {
-            // 1. TRAVA DE SEGURANÇA: Se o lojista estiver com um pedido aberto no Modal, 
-            // a tela pausa a atualização para não fechar a janela na cara dele!
-            if (document.querySelector('.modal.show')) return;
-
-            try {
-                // 2. Faz o "Fetch" (Busca Invisível) no servidor para pegar os dados novos
-                const response = await fetch(window.location.href, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                const html = await response.text();
-
-                // 3. Cria um "Espelho" da página em memória
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-
-                // 4. Substitui apenas as partes vitais (sem piscar a tela)
-                document.getElementById('secao-cards').innerHTML = doc.getElementById('secao-cards').innerHTML;
-                document.getElementById('secao-faturamento').innerHTML = doc.getElementById('secao-faturamento').innerHTML;
-                document.getElementById('secao-pedidos').innerHTML = doc.getElementById('secao-pedidos').innerHTML;
-
-                // 5. ALERTA SONORO DE NOVO PEDIDO NA COZINHA!
-                const novoTotalPedidos = parseInt(doc.getElementById('contador-pedidos-api')?.innerText) || 0;
-if (novoTotalPedidos > totalPedidosAtual) {
-    totalPedidosAtual = novoTotalPedidos;
-}
-
-            } catch (error) {
-                console.error("Erro na API de Tempo Real:", error);
-            }
-        }
-
-        // Inicia o radar: Vai ao servidor procurar pedidos novos a cada 10 segundos!
-        setInterval(sincronizarDashboard, 10000);
-    });
-</script>
-<script>
-    // ---- MOTOR DE SINCRONIZAÇÃO EM TEMPO REAL E AÇÕES SEM RELOAD ----
-    document.addEventListener("DOMContentLoaded", function() {
-        
+        // ==========================================
+        // 3. MOTOR DE SINCRONIZAÇÃO ÚNICO
+        // ==========================================
         let totalPedidosAtual = parseInt(document.getElementById('contador-pedidos-api')?.innerText) || 0;
 
-        // 1. Modificamos a função para aceitar um parâmetro 'forcar_atualizacao'
-        async function sincronizarDashboard(forcar_atualizacao = false) {
-            
-            // Se o modal estiver aberto, ele não atualiza sozinho (para não fechar na cara do lojista), 
-            // a menos que a gente force a atualização após clicar num botão.
-            if (!forcar_atualizacao && document.querySelector('.modal.show')) return;
+        // Função isolada que troca o HTML dos painéis
+        function atualizarDOM(htmlString) {
+            const doc = new DOMParser().parseFromString(htmlString, 'text/html');
 
-            try {
-                const response = await fetch(window.location.href, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                const html = await response.text();
+            const secaoCards = doc.getElementById('secao-cards');
+            const secaoFaturamento = doc.getElementById('secao-faturamento');
+            const secaoPedidos = doc.getElementById('secao-pedidos');
 
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
+            if (secaoCards) document.getElementById('secao-cards').innerHTML = secaoCards.innerHTML;
+            if (secaoFaturamento) document.getElementById('secao-faturamento').innerHTML = secaoFaturamento.innerHTML;
+            if (secaoPedidos) document.getElementById('secao-pedidos').innerHTML = secaoPedidos.innerHTML;
 
-                // Atualiza as seções vitais
-                document.getElementById('secao-cards').innerHTML = doc.getElementById('secao-cards').innerHTML;
-                document.getElementById('secao-faturamento').innerHTML = doc.getElementById('secao-faturamento').innerHTML;
-                document.getElementById('secao-pedidos').innerHTML = doc.getElementById('secao-pedidos').innerHTML;
-
-                // Alerta sonoro de novo pedido
-                const novoTotalPedidos = parseInt(doc.getElementById('contador-pedidos-api')?.innerText) || 0;
-                if (novoTotalPedidos > totalPedidosAtual) {
-                    const campainha = new Audio('https://actions.google.com/sounds/v1/alarms/ding_ding_ding.ogg');
-                    campainha.volume = 0.5;
-                    campainha.play();
-                    totalPedidosAtual = novoTotalPedidos;
-                }
-
-            } catch (error) {
-                console.error("Erro na API de Tempo Real:", error);
+            const novoTotal = parseInt(doc.getElementById('contador-pedidos-api')?.innerText) || 0;
+            if (novoTotal > totalPedidosAtual) {
+                new Audio('https://actions.google.com/sounds/v1/alarms/ding_ding_ding.ogg').play();
+                totalPedidosAtual = novoTotal;
             }
         }
 
-        // Continua rodando a cada 10 segundos
+        async function sincronizarDashboard(forcar = false) {
+            if (!forcar && document.querySelector('.modal.show')) return; // Pausa se tiver modal aberto
+
+            try {
+                // Adiciona um timestamp (t=...) na URL para forçar o navegador a não usar cache!
+                const url = new URL(window.location.href);
+                url.searchParams.set('t', new Date().getTime());
+
+                const response = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                const html = await response.text();
+                
+                atualizarDOM(html);
+            } catch (error) { 
+                console.error("Erro na sincronização:", error); 
+            }
+        }
+
         setInterval(() => sincronizarDashboard(false), 10000);
 
-        // =========================================================================
-        // 2. INTERCEPTAR CLIQUES DOS BOTÕES DE STATUS (SEM RECARREGAR A PÁGINA)
-        // =========================================================================
+      // ==========================================
+        // 4. AÇÕES APROVAR/CANCELAR/CHAMAR ENTREGADOR
+        // ==========================================
         document.body.addEventListener('submit', async function(e) {
-            // Se o formulário enviado for o de "Mudar Status do Pedido"...
-            if (e.target && e.target.action && e.target.action.includes('mudar_status_pedido')) {
-                e.preventDefault(); // Trava o recarregamento da tela!
-
+            
+            // Agora o JS procura pela CLASSE, é 100% garantido que ele vai achar!
+            if (e.target && e.target.classList.contains('form-acao-pedido')) {
+                e.preventDefault(); // Impede que a tela pisque antes da hora
+                
                 const form = e.target;
                 const formData = new FormData(form);
-
-                // Captura qual botão exato foi clicado (Preparando, Pronto ou Cancelar)
-                if (e.submitter && e.submitter.name) {
-                    formData.append(e.submitter.name, e.submitter.value);
-                }
-
-                try {
-                    // Manda a informação para o Django em segundo plano
-                    await fetch(form.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                    });
-
-                    // Esconde o modal suavemente
-                    const modalNode = form.closest('.modal');
-                    if (modalNode) {
-                        const modalInstance = bootstrap.Modal.getInstance(modalNode);
-                        if (modalInstance) modalInstance.hide();
+                
+                // Pega exatamente qual botão foi clicado
+                const submitter = e.submitter || document.activeElement;
+                if (submitter) {
+                    if (submitter.name) {
+                        formData.append(submitter.name, submitter.value);
                     }
-
-                    // Limpa o fundo preto do modal e força a atualização imediata da tabela
-                    setTimeout(() => {
-                        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-                        document.body.classList.remove('modal-open');
-                        document.body.style = '';
-                        
-                        sincronizarDashboard(true); // Atualiza os dados IMEDIATAMENTE!
-                    }, 300); // 300ms é o tempo da animação do Bootstrap fechar o modal
-
-                } catch (err) {
-                    console.error("Erro ao mudar status do pedido", err);
+                    
+                    // Mostra visualmente que está carregando e trava o botão
+                    submitter.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Proc...';
+                    submitter.classList.add('disabled');
+                    form.querySelectorAll('button').forEach(b => b.disabled = true);
                 }
-            }
-        });
-
-        // =========================================================================
-        // 3. FAZER O MESMO PARA O BOTÃO "CHAMAR ENTREGADOR"
-        // =========================================================================
-        document.body.addEventListener('click', async function(e) {
-            // Verifica se clicou no botão (link) de solicitar entrega
-            const btnEntregador = e.target.closest('a[href*="solicitar_entrega_loja"]');
-            
-            if (btnEntregador) {
-                e.preventDefault(); // Trava o recarregamento
                 
                 try {
-                    await fetch(btnEntregador.href, {
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    // Envia a ação invisível para o Python
+                    await fetch(form.action, { 
+                        method: 'POST', 
+                        body: formData, 
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' } 
                     });
                     
-                    const modalNode = btnEntregador.closest('.modal');
-                    if (modalNode) {
-                        const modalInstance = bootstrap.Modal.getInstance(modalNode);
-                        if (modalInstance) modalInstance.hide();
-                    }
-
-                    setTimeout(() => {
-                        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-                        document.body.classList.remove('modal-open');
-                        document.body.style = '';
-                        sincronizarDashboard(true); // Atualiza IMEDIATAMENTE
-                    }, 300);
-
-                } catch (err) {
-                    console.error("Erro ao chamar entregador", err);
+                    // Recarrega a página automaticamente. O Status vai atualizar na hora!
+                    window.location.reload();
+                } catch(err) { 
+                    console.error("Erro ao atualizar:", err);
+                    window.location.reload(); 
                 }
             }
         });
-    });
+
+    }); // Fim do DOMContentLoaded
+
+
+        // ==========================================
+        // 5. INTERCEPTAÇÃO DO BOTÃO "CHAMAR ENTREGADOR"
+        // ==========================================
+        document.body.addEventListener('click', async function(e) {
+            const btn = e.target.closest('a[href*="solicitar_entrega_loja"]');
+            if (btn) {
+                e.preventDefault();
+                try {
+                    const response = await fetch(btn.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    const novoHtml = await response.text();
+
+                    const modalNode = btn.closest('.modal');
+                    if (modalNode) {
+                        const btnClose = modalNode.querySelector('.btn-close');
+                        if (btnClose) btnClose.click();
+                    }
+
+                    setTimeout(() => {
+                        atualizarDOM(novoHtml);
+                        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                        document.body.classList.remove('modal-open');
+                        document.body.style = '';
+                    }, 350);
+
+                } catch(err) { console.error("Erro ao chamar entregador:", err); }
+            }
+        });
+
 </script>
 {% endblock %}

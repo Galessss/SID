@@ -13,6 +13,7 @@ from django.utils import timezone
 from django.http import JsonResponse
 from django.contrib import messages
 from django.utils.text import slugify
+from django.db.models.functions import TruncDate
 
 # Seus Models e Forms
 from .models import Produto, Pedido, ItemPedido, Configuracao, Categoria, Insumo, Perfil
@@ -212,21 +213,34 @@ def dashboard_gestor(request):
     chart_datasets = []
     cores = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
 
-    for index, item in enumerate(top_produtos_raw):
-        nome_prod = item['produto__nome']
+    # 🌟 CORREÇÃO: Agrupa todas as vendas da semana em uma única query
+    inicio_semana = hoje - timedelta(days=6)
+    nomes_top_produtos = [item['produto__nome'] for item in top_produtos_raw]
+
+    vendas_agrupadas = ItemPedido.objects.filter(
+        pedido__loja=request.user,
+        pedido__finalizado=True,
+        pedido__data_criacao__gte=inicio_semana,
+        produto__nome__in=nomes_top_produtos
+    ).exclude(
+        pedido__status_pedido='CANCELADO'
+    ).annotate(
+        dia=TruncDate('pedido__data_criacao')
+    ).values('produto__nome', 'dia').annotate(
+        total_qtd=Sum('quantidade')
+    )
+
+    # Cria um dicionário em memória para mapeamento ultra-rápido (Produto, Dia) -> Qtd
+    mapa_vendas = {}
+    for v in vendas_agrupadas:
+        mapa_vendas[(v['produto__nome'], v['dia'])] = v['total_qtd']
+
+    # Monta os datasets sem bater no banco de dados novamente
+    for index, nome_prod in enumerate(nomes_top_produtos):
         vendas_dia_a_dia = []
         for i in range(6, -1, -1):
-            inicio_janela = (hoje - timedelta(days=i))
-            fim_janela = inicio_janela.replace(hour=23, minute=59, second=59)
-            
-            qtd = ItemPedido.objects.filter(
-                produto__nome=nome_prod,
-                pedido__loja=request.user,
-                pedido__finalizado=True,
-                pedido__data_criacao__range=(inicio_janela, fim_janela)
-            ).exclude(
-                pedido__status_pedido='CANCELADO'
-            ).aggregate(s=Sum('quantidade'))['s'] or 0
+            dia_alvo = (hoje - timedelta(days=i)).date()
+            qtd = mapa_vendas.get((nome_prod, dia_alvo), 0)
             vendas_dia_a_dia.append(qtd)
         
         chart_datasets.append({
@@ -301,13 +315,6 @@ def editar_produto(request, id):
         'produto': produto
     })
 
-@login_required
-def deletar_produto(request, id):
-    produto = get_object_or_404(Produto, id=id, loja=request.user)
-    nome_produto = produto.nome
-    produto.delete()
-    messages.warning(request, f'Produto "{nome_produto}" removido permanentemente.')
-    return redirect('produtos')
 
 
 # =============================================================================
@@ -384,35 +391,6 @@ def painel_entregas(request):
         'entregadores': entregadores
     })
 
-@login_required
-def mudar_status_entrega(request, id, status):
-    pedido = get_object_or_404(Pedido, id=id)
-    if status in ['EM_ROTA', 'ENTREGUE']:
-        pedido.status_entrega = status
-        
-        if status == 'EM_ROTA':
-            pedido.data_saida_entrega = timezone.now()
-            
-            # 🌟 GRAVA QUEM É O OPERADOR NO COMPUTADOR
-            pedido.operador_despacho = request.user
-            
-            # GRAVA QUEM É O MOTOBOY SELECIONADO NA TELA
-            if request.method == 'POST':
-                entregador_id = request.POST.get('entregador_id')
-                if entregador_id:
-                    pedido.entregador_responsavel = get_object_or_404(User, id=entregador_id)
-                else:
-                    pedido.entregador_responsavel = request.user
-            else:
-                pedido.entregador_responsavel = request.user
-
-        elif status == 'ENTREGUE':
-            pedido.data_entregue = timezone.now()
-            
-        pedido.save()
-        messages.success(request, f"Status atualizado para: {pedido.get_status_entrega_display()}")
-        
-    return redirect('painel_entregas')
 
 
 @login_required
@@ -429,7 +407,10 @@ def recusar_entrega(request, id):
     messages.warning(request, f"O Pedido #{pedido.id} foi recusado e devolvido à loja.")
     return redirect('painel_entregas')
 
+
+
 @login_required
+@require_POST # 🌟 CORREÇÃO: Impede disparos acidentais via links GET
 def solicitar_entrega_loja(request, pedido_id):
     pedido = get_object_or_404(Pedido, id=pedido_id, loja=request.user)
     pedido.solicitar_entrega = True
@@ -681,14 +662,17 @@ def _get_carrinho(request):
     session_id = request.session.session_key
     pedido, created = Pedido.objects.get_or_create(sessao_id=session_id, finalizado=False, defaults={'valor_total': 0})
     return pedido
-
 def ver_carrinho(request):
     pedido = _get_carrinho(request)
     itens = pedido.itens.all().select_related('produto')
-    total = sum(item.produto.preco * item.quantidade for item in itens)
+    
+    # 🌟 CORREÇÃO: Multiplica a quantidade pelo preço salvo no momento da adição
+    total = sum(item.preco * item.quantidade for item in itens)
+    
     pedido.valor_total = total
     pedido.save()
     return render(request, 'core/carrinho.html', {'pedido': pedido, 'itens': itens, 'total': total})
+
 
 def remover_item_carrinho(request, item_id):
     if request.method == 'POST':
@@ -770,17 +754,20 @@ def api_criar_categoria(request):
         return JsonResponse({'sucesso': False, 'erro': str(e)})
 
 @login_required
+@require_POST # Sempre use require_POST em deleções
 def api_excluir_categoria(request, id):
-    if request.method == 'POST':
-        try:
-            cat = Categoria.objects.get(id=id)
-            if cat.produtos.exists():
-                return JsonResponse({'status': 'erro', 'mensagem': 'Existem produtos nesta categoria.'})
-            cat.delete()
-            return JsonResponse({'status': 'sucesso'})
-        except:
-            return JsonResponse({'status': 'erro', 'mensagem': 'Erro ao excluir.'}, status=400)
-    return JsonResponse({'status': 'erro'}, status=405)
+    try:
+        # CORREÇÃO: Garante que a categoria é da loja que está solicitando
+        cat = Categoria.objects.get(id=id, loja=request.user)
+        
+        if cat.produtos.exists():
+            return JsonResponse({'status': 'erro', 'mensagem': 'Existem produtos nesta categoria.'})
+        cat.delete()
+        return JsonResponse({'status': 'sucesso'})
+    except Categoria.DoesNotExist:
+        return JsonResponse({'status': 'erro', 'mensagem': 'Categoria não encontrada ou não pertence a você.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'erro', 'mensagem': str(e)}, status=400)
 
 @login_required
 def api_alternar_status(request, id):
@@ -806,6 +793,12 @@ def adicionar_item_api(request, produto_id):
     if not pedido.loja:
         pedido.loja = produto.loja
         pedido.save()
+    elif pedido.loja != produto.loja:
+        # Se a loja do produto for diferente da loja do carrinho atual, bloqueia!
+        return JsonResponse({
+            'status': 'erro', 
+            'erro': 'Você não pode misturar produtos de lojas diferentes no mesmo pedido. Limpe o carrinho primeiro.'
+        }, status=400)
         
     item, created = ItemPedido.objects.get_or_create(pedido=pedido, produto=produto, defaults={'preco': produto.preco, 'quantidade': 0})
     item.quantidade += 1
@@ -848,7 +841,9 @@ def equipe_entregadores(request):
         username_auto = f"motoboy_{nome.split()[0].lower()}_{timezone.now().strftime('%M%S')}"
         
         try:
-            novo_user = User.objects.create_user(username=username_auto, password='123', first_name=nome)
+            # 🌟 CORREÇÃO: Gerar uma senha aleatória de 6 dígitos
+            senha_aleatoria = User.objects.make_random_password(length=6)
+            novo_user = User.objects.create_user(username=username_auto, password=senha_aleatoria, first_name=nome)
             
             perfil = novo_user.perfil
             perfil.tipo_usuario = 'ENTREGADORA'
@@ -859,15 +854,17 @@ def equipe_entregadores(request):
             perfil.placa_veiculo = placa.upper() if placa else ""
             perfil.save()
             
-            messages.success(request, f"Motoboy {nome} adicionado à equipe com sucesso!")
+            # Exibe a senha na tela para o operador repassar ao entregador
+            messages.success(request, f"Motoboy {nome} cadastrado! LOGIN: {username_auto} | SENHA: {senha_aleatoria}")
         except Exception as e:
             messages.error(request, f"Erro ao cadastrar motoboy: {e}")
             
         return redirect('equipe_entregadores')
 
-    # 🌟 CORREÇÃO 1: Esconde o Operador logado (sid) da lista da Frota
     equipe = User.objects.filter(perfil__tipo_usuario='ENTREGADORA', is_active=True).exclude(id=request.user.id).order_by('first_name')
     return render(request, 'gestao/equipe_entregadores.html', {'equipe': equipe})
+
+
 
 @login_required
 @require_POST
@@ -889,9 +886,22 @@ def excluir_entregador(request, id):
     messages.warning(request, f"Entregador {nome} desativado da frota.")
     return redirect('equipe_entregadores')
 
+
+# ... seus outros imports (User, Pedido, etc) ...
+
 @login_required
+@require_POST  # Bloqueia acessos via GET (Proteção contra CSRF e cliques acidentais)
 def mudar_status_entrega(request, id, status):
+    
+    # 1. TRAVA DE SEGURANÇA (IDOR): Apenas Entregadoras, Admins ou Superusuários podem acessar
+    perfil = getattr(request.user, 'perfil', None)
+    if not request.user.is_superuser and (not perfil or perfil.tipo_usuario not in ['ENTREGADORA', 'ADMIN']):
+        messages.error(request, "Você não tem permissão para alterar o status da entrega.")
+        return redirect('dashboard')
+
+    # 2. Busca do Pedido
     pedido = get_object_or_404(Pedido, id=id)
+    
     if status in ['EM_ROTA', 'ENTREGUE']:
         pedido.status_entrega = status
         
@@ -899,16 +909,13 @@ def mudar_status_entrega(request, id, status):
             pedido.data_saida_entrega = timezone.now()
             pedido.operador_despacho = request.user
             
-            # 🌟 CORREÇÃO 3: Obriga a escolha de um Motoboy real
-            if request.method == 'POST':
-                entregador_id = request.POST.get('entregador_id')
-                if entregador_id:
-                    pedido.entregador_responsavel = get_object_or_404(User, id=entregador_id)
-                else:
-                    messages.error(request, "Por favor, selecione qual motoboy vai fazer esta entrega!")
-                    return redirect('painel_entregas')
+            # Como o @require_POST garante que é um POST, removemos o "if request.method == 'POST':"
+            entregador_id = request.POST.get('entregador_id')
+            
+            if entregador_id:
+                pedido.entregador_responsavel = get_object_or_404(User, id=entregador_id)
             else:
-                messages.error(request, "Ação inválida. Selecione o motoboy pelo formulário.")
+                messages.error(request, "Por favor, selecione qual motoboy vai fazer esta entrega!")
                 return redirect('painel_entregas')
 
         elif status == 'ENTREGUE':
@@ -918,3 +925,12 @@ def mudar_status_entrega(request, id, status):
         messages.success(request, f"Status atualizado para: {pedido.get_status_entrega_display()}")
         
     return redirect('painel_entregas')
+
+@login_required
+@require_POST
+def deletar_produto(request, id):
+    produto = get_object_or_404(Produto, id=id, loja=request.user)
+    produto.ativo = False # Apenas desativa, preservando o histórico!
+    produto.save()
+    messages.warning(request, f'Produto "{produto.nome}" foi removido do catálogo.')
+    return redirect('produtos')
