@@ -51,9 +51,14 @@ class Categoria(models.Model):
         verbose_name = "Categoria"
         verbose_name_plural = "Categorias"
         unique_together = ('nome', 'loja')
+        # 🌟 NOVO: Deixa a busca de categorias por loja instantânea
+        indexes = [
+            models.Index(fields=['loja']),
+        ]
 
     def __str__(self):
         return f"{self.nome} ({self.loja.username if self.loja else 'Global'})"
+    
 
 class Configuracao(models.Model):
     loja = models.OneToOneField(User, on_delete=models.CASCADE, related_name='configuracao', null=True)
@@ -114,36 +119,46 @@ class Produto(models.Model):
     foto = models.ImageField(upload_to='produtos/', blank=True, null=True)
     ativo = models.BooleanField(default=True)
     
+    class Meta:
+        # 🌟 NOVO: O cliente só vê produtos DAQUELA loja que estão ATIVOS. 
+        # Esse índice impede que o banco de dados trave em dias de pico (ex: Sexta à noite).
+        indexes = [
+            models.Index(fields=['loja', 'ativo']),
+            models.Index(fields=['categoria']),
+        ]
+
     def __str__(self):
         return self.nome
     
 # ==============================================================================
 # 4. PEDIDOS E ENTREGA (LOGÍSTICA)
 # ==============================================================================
+
 class Pedido(models.Model):
+    # Campos base (mantidos 1 única vez)
     sessao_id = models.CharField(max_length=50, null=True, blank=True)
     loja = models.ForeignKey(User, on_delete=models.CASCADE, related_name='meus_pedidos', null=True)
     nome_cliente = models.CharField(max_length=100, null=True, blank=True)
     data_criacao = models.DateTimeField(auto_now_add=True)
+    
+    # Controle Logístico e Financeiro
     operador_despacho = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='despachos_realizados', verbose_name="Operador que despachou")
     data_entregue = models.DateTimeField(null=True, blank=True, verbose_name="Hora que foi entregue")
+    data_saida_entrega = models.DateTimeField(null=True, blank=True, verbose_name="Hora que saiu para entrega")
     finalizado = models.BooleanField(default=False)
     valor_total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    data_saida_entrega = models.DateTimeField(null=True, blank=True, verbose_name="Hora que saiu para entrega")
-    sessao_id = models.CharField(max_length=50, null=True, blank=True)
-    loja = models.ForeignKey(User, on_delete=models.CASCADE, related_name='meus_pedidos', null=True)
-    nome_cliente = models.CharField(max_length=100, null=True, blank=True)
-    data_criacao = models.DateTimeField(auto_now_add=True)
 
-
+    # Dados de Contato e Endereço
     telefone = models.CharField(max_length=20, null=True, blank=True)
     rua = models.CharField(max_length=255, null=True, blank=True, verbose_name="Rua/Alameda")
     bairro = models.CharField(max_length=100, null=True, blank=True, verbose_name="Bairro")
     numero = models.CharField(max_length=20, null=True, blank=True, verbose_name="Número/Lote")
     
+    # Pagamento
     OPCOES_PAGAMENTO = [('credito', 'Cartão de Crédito'), ('debito', 'Cartão de Débito'), ('dinheiro', 'Dinheiro')]
     forma_pagamento = models.CharField(max_length=20, choices=OPCOES_PAGAMENTO, null=True, blank=True)
 
+    # Status e Atribuições
     solicitar_entrega = models.BooleanField(default=False, verbose_name="Solicitar Entregadora?")
     
     STATUS_PEDIDO_CHOICES = [
@@ -162,14 +177,24 @@ class Pedido(models.Model):
     status_entrega = models.CharField(max_length=20, choices=STATUS_ENTREGA, default='AGUARDANDO', blank=True, null=True)
     entregador_responsavel = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='entregas')
 
+    class Meta:
+        # ISSO SALVA O SEU SERVIDOR!
+        # Cria "atalhos" no banco de dados para buscas rápidas que o Dashboard faz a cada 10 segundos
+        indexes = [
+            models.Index(fields=['loja', 'status_pedido']),
+            models.Index(fields=['loja', 'data_criacao']),
+        ]
+
     def __str__(self):
         return f"Pedido #{self.id} - {self.nome_cliente}"
 
+
+
 class ItemPedido(models.Model):
     pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name='itens')
-    produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
+    produto = models.ForeignKey(Produto, on_delete=models.SET_NULL, null=True) 
     quantidade = models.PositiveIntegerField(default=1)
-    preco = models.DecimalField(max_digits=10, decimal_places=2) 
+    preco = models.DecimalField(max_digits=10, decimal_places=2)
     
     @property
     def subtotal(self):

@@ -12,18 +12,22 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
-
+from dotenv import load_dotenv
+import dj_database_url
 
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ.get('SECRET_KEY')
 SECRET_KEY = 'django-insecure-*uqi*ygass#7&xui(6(zi(iq=qks0=%iq6c^d^%j5vu_sn=q53'
 
 # SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 DEBUG = True
 
 ALLOWED_HOSTS = []
@@ -80,10 +84,9 @@ WSGI_APPLICATION = 'projeto.wsgi.application'
 
 # Apague o DATABASES antigo que tem 'db.sqlite3' e deixe APENAS este:
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL')
+    )
 }
 
 

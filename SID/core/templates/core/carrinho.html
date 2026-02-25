@@ -70,14 +70,12 @@
                             </div>
                         </div>
                         <div class="text-end">
-                            <div class="fw-bold">R$ {{ item.subtotal }}</div>
-                            <button type="submit" 
-                                    formaction="{% url 'remover_item_carrinho' item.id %}" 
-                                    class="btn-trash" 
-                                    formnovalidate>
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
+    <div class="fw-bold">R$ {{ item.subtotal }}</div>
+    <form action="{% url 'remover_item_carrinho' item.id %}" method="POST" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn-trash"><i class="bi bi-trash"></i></button>
+    </form>
+</div>
                     </div>
                     {% endfor %}
                 </div>
