@@ -21,3 +21,12 @@ SID/static/
 venv/
 env/
 .venv/
+
+git rm -r --cached "*/__pycache__/*"
+git rm -r --cached "*.pyc"
+
+# Remove o .env do cache do Git
+git rm --cached SID/.env
+
+# Remove o banco de dados local do cache do Git
+git rm --cached SID/db.sqlite3
